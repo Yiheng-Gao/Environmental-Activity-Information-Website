@@ -1,0 +1,11 @@
+{% extends 'main/base.html' %}
+{% block title %}Create Activity{% endblock %}
+{% block content %}
+<h2>Create a New Activity</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="btn btn-success">Save</button>
+  <a href="{% url 'activity_list' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

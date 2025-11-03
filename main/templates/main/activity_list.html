@@ -1,0 +1,39 @@
+{% extends 'main/base.html' %}
+{% block title %}Activities · Eco Activities{% endblock %}
+{% block content %}
+<h1 class="mb-3">Upcoming Activities</h1>
+
+<div class="row g-3">
+  {% for a in activities %}
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">{{ a.title }}</h5>
+          <p class="card-text">{{ a.description|truncatechars:140 }}</p>
+          <p class="mb-1"><strong>Category:</strong> {{ a.category }}</p>
+          <p class="mb-1"><strong>Location:</strong> {{ a.location }}</p>
+          <p class="mb-0"><strong>Date:</strong> {{ a.date }}</p>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <p>No activities yet. Add some in <a href="/admin/">admin</a>.</p>
+  {% endfor %}
+
+</div>
+
+  <div class="mt-4 text-center">
+  {% if user.is_authenticated %}
+    <a href="{% url 'activity_create' %}" class="btn btn-success btn-lg">
+      + Create New Activity
+    </a>
+  {% else %}
+    <p>
+      <a href="{% url 'login' %}">Login</a> to create a new activity.
+    </p>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+
