@@ -8,7 +8,12 @@
     <div class="col-md-6">
       <div class="card h-100">
         <div class="card-body">
-          <h5 class="card-title">{{ a.title }}</h5>
+          <h5 class="card-title">
+              <a href="{% url 'activity_detail' a.pk %}" class="text-success text-decoration-none">
+                {{ a.title }}
+              </a>
+          </h5>
+
           <p class="card-text">{{ a.description|truncatechars:140 }}</p>
           <p class="mb-1"><strong>Category:</strong> {{ a.category }}</p>
           <p class="mb-1"><strong>Location:</strong> {{ a.location }}</p>
