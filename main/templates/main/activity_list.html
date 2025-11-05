@@ -1,7 +1,9 @@
 {% extends 'main/base.html' %}
 {% block title %}Activities · Eco Activities{% endblock %}
 {% block content %}
-<h1 class="mb-3">Upcoming Activities</h1>
+<h1 class="mb-3">
+    {% if query %}Search results for "{{ query }}"{% else %}Upcoming Activities{% endif %}
+</h1>
 
 <div class="row g-3">
   {% for a in activities %}

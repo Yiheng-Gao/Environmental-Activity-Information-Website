@@ -4,10 +4,23 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from .models import Activity, Media
 from django.contrib import messages
+from django.http import JsonResponse
+from django.db.models import Q
 
 def activity_list(request):
-    activities = Activity.objects.order_by('-created_at')  # newest first
-    return render(request, 'main/activity_list.html', {'activities': activities})
+    q = request.GET.get('q', '')
+
+    if q:
+        activities = Activity.objects.filter(
+            Q(title__icontains=q) | Q(description__icontains=q)
+        ).order_by('-created_at')
+    else:
+        activities = Activity.objects.order_by('-created_at')
+
+    return render(request, 'main/activity_list.html', {
+        'activities': activities,
+        'query': q
+    })
 
 def signup(request):
     if request.method == 'POST':
@@ -65,4 +78,18 @@ def activity_detail(request, pk):
         'media_items': media_items,
         'form': form
     })
+
+def search_suggest(request):
+    q = request.GET.get('q', '')
+    results = []
+
+    if q:
+        activities = Activity.objects.filter(
+            Q(title__icontains=q) | Q(description__icontains=q)
+        )[:5]
+
+        for a in activities:
+            results.append({"id": a.pk, "title": a.title})
+
+    return JsonResponse({"results": results})
 

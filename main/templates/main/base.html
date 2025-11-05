@@ -11,7 +11,24 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-success mb-4">
   <div class="container">
     <a class="navbar-brand" href="{% url 'activity_list' %}">Eco Activities</a>
+  <form class="d-flex me-3" method="get" action="{% url 'activity_list' %}">
+    <div class="position-relative">
+        <input class="form-control"
+               type="search"
+               placeholder="Search activities..."
+               name="q"
+               id="searchInput"
+               autocomplete="off">
+
+        <div id="suggestions"
+             class="list-group position-absolute w-100"
+             style="z-index: 2000;"></div>
+    </div>
+    <button class="btn btn-light ms-2" type="submit">Search</button>
+</form>
+
     <div class="ms-auto">
+
       {% if user.is_authenticated %}
           <span class="text-white me-2">Hi, {{ user.username }}</span>
         <form method="post" action="{% url 'logout' %}" style="display:inline;">
@@ -32,5 +49,35 @@
   {% endfor %}
   {% block content %}{% endblock %}
 </main>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("searchInput");
+    const suggestionsBox = document.getElementById("suggestions");
+
+    input.addEventListener("keyup", function () {
+        let query = input.value;
+
+        if (query.length < 1) {
+            suggestionsBox.innerHTML = "";
+            return;
+        }
+
+        fetch(`/search-suggest/?q=` + query)
+            .then(response => response.json())
+            .then(data => {
+                suggestionsBox.innerHTML = "";
+                data.results.forEach(item => {
+                    const option = document.createElement("a");
+                    option.href = `/activity/${item.id}/`;
+                    option.classList.add("list-group-item", "list-group-item-action");
+                    option.textContent = item.title;
+                    suggestionsBox.appendChild(option);
+                });
+            });
+    });
+});
+</script>
+
 </body>
 </html>
