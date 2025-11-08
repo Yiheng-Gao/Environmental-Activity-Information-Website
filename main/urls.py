@@ -8,4 +8,6 @@ urlpatterns = [
     path('activity/new/', views.activity_create, name='activity_create'),
     path('activity/<int:pk>/', views.activity_detail, name='activity_detail'),
     path('search-suggest/', views.search_suggest, name='search_suggest'),
+    path('activity/<int:pk>/register/', views.register_activity, name='activity_register'),
+    path('activity/<int:pk>/cancel/', views.cancel_registration, name='activity_cancel'),
 ]

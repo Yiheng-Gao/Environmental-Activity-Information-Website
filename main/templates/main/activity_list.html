@@ -19,7 +19,35 @@
           <p class="card-text">{{ a.description|truncatechars:140 }}</p>
           <p class="mb-1"><strong>Category:</strong> {{ a.category }}</p>
           <p class="mb-1"><strong>Location:</strong> {{ a.location }}</p>
+          <p class="mb-1"><strong>Hosted by:</strong> {{ a.created_by }} </p>
           <p class="mb-0"><strong>Date:</strong> {{ a.date }}</p>
+
+            {% if user.is_authenticated %}
+              <div class="mt-2">
+                {% if a.id in registered_ids %}
+                  <span class="badge bg-success me-2">Registered</span>
+                  <form method="post" action="{% url 'activity_cancel' a.pk %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                      Cancel
+                    </button>
+                  </form>
+                {% else %}
+                  <form method="post" action="{% url 'activity_register' a.pk %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-primary">
+                      Register
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            {% else %}
+              <p class="mt-2">
+                <a href="{% url 'login' %}">Login</a> to register for this activity.
+              </p>
+            {% endif %}
+
+
         </div>
       </div>
     </div>
