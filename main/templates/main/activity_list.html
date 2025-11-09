@@ -2,8 +2,23 @@
 {% block title %}Activities · Eco Activities{% endblock %}
 {% block content %}
 <h1 class="mb-3">
-    {% if query %}Search results for "{{ query }}"{% else %}Upcoming Activities{% endif %}
+    {% if query or category_filter %}
+        {% if query and category_filter %}
+            Search results for "{{ query }}" in {{ category_filter }}
+        {% elif query %}
+            Search results for "{{ query }}"
+        {% elif category_filter %}
+            Activities in {{ category_filter }}
+        {% endif %}
+    {% else %}
+        Upcoming Activities
+    {% endif %}
 </h1>
+{% if query or category_filter %}
+    <p class="text-muted">
+        <a href="{% url 'activity_list' %}" class="text-decoration-none">Clear filters</a>
+    </p>
+{% endif %}
 
     <p class="text-muted">
     This session visits to main page: {{ session_visit_count }}<br>

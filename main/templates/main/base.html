@@ -13,19 +13,29 @@
   <div class="container">
     <a class="navbar-brand" href="{% url 'activity_list' %}">Eco Activities</a>
   <form class="d-flex me-3" method="get" action="{% url 'activity_list' %}">
-    <div class="position-relative">
+    <div class="position-relative me-2">
         <input class="form-control"
                type="search"
                placeholder="Search activities..."
                name="q"
                id="searchInput"
-               autocomplete="off">
+               value="{{ request.GET.q }}"
+               autocomplete="off"
+               style="min-width: 300px; width: 300px;">
 
         <div id="suggestions"
              class="list-group position-absolute w-100"
              style="z-index: 2000;"></div>
     </div>
-    <button class="btn btn-light ms-2" type="submit">Search</button>
+    <select class="form-select me-2" name="category" id="categoryFilter" style="min-width: 150px;">
+        <option value="">All Categories</option>
+        <option value="Tree Planting" {% if request.GET.category == 'Tree Planting' %}selected{% endif %}>Tree Planting</option>
+        <option value="Recycling" {% if request.GET.category == 'Recycling' %}selected{% endif %}>Recycling</option>
+        <option value="Cleanup" {% if request.GET.category == 'Cleanup' %}selected{% endif %}>Cleanup</option>
+        <option value="Awareness" {% if request.GET.category == 'Awareness' %}selected{% endif %}>Awareness</option>
+        <option value="Other" {% if request.GET.category == 'Other' %}selected{% endif %}>Other</option>
+    </select>
+    <button class="btn btn-light" type="submit">Search</button>
 </form>
 
     <div class="ms-auto d-flex align-items-center">

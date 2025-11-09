@@ -18,19 +18,30 @@ class ActivityListView(ListView):
 
     def get_queryset(self):
         q = self.request.GET.get('q', '')
+        category_filter = self.request.GET.get('category', '')
+        
+        queryset = Activity.objects.all()
+        
+        # Apply keyword search filter
         if q:
-            return Activity.objects.filter(
+            queryset = queryset.filter(
                 Q(title__icontains=q) |
                 Q(description__icontains=q) |
                 Q(location__icontains=q)
-            ).order_by('-created_at')
-        return Activity.objects.order_by('-created_at')
+            )
+        
+        # Apply category dropdown filter
+        if category_filter:
+            queryset = queryset.filter(category=category_filter)
+        
+        return queryset.order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         request = self.request
 
         q = request.GET.get('q', '')
+        category_filter = request.GET.get('category', '')
 
         # session
         session_visit_count = request.session.get('main_page_visits', 0) + 1
@@ -55,9 +66,15 @@ class ActivityListView(ListView):
                 ).values_list('joined_activity_id', flat=True)
             )
 
+        # Get category choices for dropdown
+        from .models import Activity
+        category_choices = Activity.CATEGORY_CHOICES
+
         # Add to context
         context.update({
             'query': q,
+            'category_filter': category_filter,
+            'category_choices': category_choices,
             'registered_ids': registered_ids,
             'session_visit_count': session_visit_count,
             'cookie_total_visits': total_visits,
