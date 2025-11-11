@@ -303,3 +303,36 @@ def contact_us(request):
 
 def about_us(request):
     return render(request, 'main/about_us.html')
+
+def home(request):
+    """Homepage view with hero section and statistics"""
+    from django.db.models import Count
+    from datetime import timedelta
+    
+    # Calculate statistics
+    total_activities = Activity.objects.count()
+    total_participants = Registration.objects.filter(status='joined').count()
+    
+    # Upcoming activities (next 30 days)
+    today = timezone.now()
+    next_month = today + timedelta(days=30)
+    upcoming_count = Activity.objects.filter(date__gte=today, date__lte=next_month).count()
+    
+    # Activities by category
+    category_counts = Activity.objects.values('category').annotate(count=Count('id'))
+    categories_available = len(category_counts)
+    
+    # Session tracking for homepage
+    session_visit_count = request.session.get('home_visits', 0) + 1
+    request.session['home_visits'] = session_visit_count
+    
+    context = {
+        'total_activities': total_activities,
+        'total_participants': total_participants,
+        'upcoming_count': upcoming_count,
+        'categories_available': categories_available,
+        'category_counts': category_counts,
+        'session_visit_count': session_visit_count,
+    }
+    
+    return render(request, 'main/home.html', context)
