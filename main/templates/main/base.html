@@ -14,7 +14,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-success mb-4">
   <div class="container">
     <a class="navbar-brand" href="{% url 'home' %}">Eco Activities</a>
-  <form class="d-flex me-3" method="get" action="{% url 'activity_list' %}">
+  <form class="d-flex me-3" method="get" action="{% url 'activity_list' %}" id="searchForm">
     <div class="position-relative me-2">
         <input class="form-control"
                type="search"
@@ -29,7 +29,7 @@
              class="list-group position-absolute w-100"
              style="z-index: 2000;"></div>
     </div>
-    <select class="form-select me-2" name="category" id="categoryFilter" style="min-width: 150px;">
+    <select class="form-select me-2" name="category" id="categoryFilter" style="min-width: 150px;" onchange="document.getElementById('searchForm').submit();">
         <option value="">All Categories</option>
         <option value="Tree Planting" {% if request.GET.category == 'Tree Planting' %}selected{% endif %}>Tree Planting</option>
         <option value="Recycling" {% if request.GET.category == 'Recycling' %}selected{% endif %}>Recycling</option>
@@ -37,7 +37,6 @@
         <option value="Awareness" {% if request.GET.category == 'Awareness' %}selected{% endif %}>Awareness</option>
         <option value="Other" {% if request.GET.category == 'Other' %}selected{% endif %}>Other</option>
     </select>
-    <button class="btn btn-light" type="submit">Search</button>
 </form>
 
     <div class="ms-auto d-flex align-items-center">
@@ -74,9 +73,16 @@
 document.addEventListener("DOMContentLoaded", function () {
     const input = document.getElementById("searchInput");
     const suggestionsBox = document.getElementById("suggestions");
+    const searchForm = document.getElementById("searchForm");
 
-    input.addEventListener("keyup", function () {
+    input.addEventListener("keyup", function (e) {
         let query = input.value;
+
+        // Submit form on Enter key
+        if (e.key === 'Enter') {
+            searchForm.submit();
+            return;
+        }
 
         if (query.length < 1) {
             suggestionsBox.innerHTML = "";
