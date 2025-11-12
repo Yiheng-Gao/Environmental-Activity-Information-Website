@@ -322,6 +322,12 @@ def home(request):
     category_counts = Activity.objects.values('category').annotate(count=Count('id'))
     categories_available = len(category_counts)
     
+    # Featured upcoming activities (next 4 upcoming)
+    featured_activities = Activity.objects.filter(date__gte=today).order_by('date')[:4]
+    
+    # Get all categories for highlights
+    all_categories = Activity.CATEGORY_CHOICES
+    
     # Session tracking for homepage
     session_visit_count = request.session.get('home_visits', 0) + 1
     request.session['home_visits'] = session_visit_count
@@ -332,6 +338,8 @@ def home(request):
         'upcoming_count': upcoming_count,
         'categories_available': categories_available,
         'category_counts': category_counts,
+        'featured_activities': featured_activities,
+        'all_categories': all_categories,
         'session_visit_count': session_visit_count,
     }
     
