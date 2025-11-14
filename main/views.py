@@ -312,34 +312,144 @@ def activity_delete(request, pk):
     return redirect('activity_detail', pk=pk)
 
 @login_required
-def user_history(request):
-    history_items = UserHistory.objects.filter(
-        user=request.user
-    ).order_by('-timestamp')
-
-    # session data
-    session_main_visits = request.session.get('main_page_visits', 0)
-    session_activity_visits = request.session.get('activity_visits', {})
-
-    # cookie data
-    cookie_total_visits = request.COOKIES.get('total_visits')
-    cookie_last_visit = request.COOKIES.get('last_visit')
-
-    # optional: map activity IDs to titles for nicer display
-    activity_title_map = {}
-    if session_activity_visits:
-        activities = Activity.objects.filter(id__in=session_activity_visits.keys())
-        for a in activities:
-            activity_title_map[str(a.id)] = a.title
-
-    return render(request, 'main/user_history.html', {
-        'history_items': history_items,
-        'session_main_visits': session_main_visits,
-        'session_activity_visits': session_activity_visits,
-        'activity_title_map': activity_title_map,
-        'cookie_total_visits': cookie_total_visits,
-        'cookie_last_visit': cookie_last_visit,
+def user_dashboard(request):
+    """User dashboard with profile, statistics, and activities"""
+    user = request.user
+    now = timezone.now()
+    
+    # Get user profile
+    profile = None
+    try:
+        profile = user.profile
+    except:
+        pass
+    
+    # Statistics
+    activities_created = Activity.objects.filter(created_by=user).count()
+    activities_registered = Registration.objects.filter(
+        user=user, 
+        status='joined',
+        joined_activity__date__gte=now
+    ).count()
+    total_registrations = Registration.objects.filter(user=user, status='joined').count()
+    
+    # Recent activities created by user (last 5)
+    my_activities = Activity.objects.filter(created_by=user).order_by('-created_at')[:5]
+    
+    # Upcoming activities user is registered for (next 5)
+    upcoming_registered = Activity.objects.filter(
+        registrations__user=user,
+        registrations__status='joined',
+        date__gte=now
+    ).order_by('date')[:5]
+    
+    # Recent history - filter for registration and activity views only (exclude "Visited activities page")
+    recent_history = UserHistory.objects.filter(
+        user=user
+    ).exclude(
+        action='Visited activities page'
+    ).filter(
+        Q(action__startswith='Registered for activity:') | 
+        Q(action__startswith='Visited activity:')
+    ).order_by('-timestamp')[:10]
+    
+    # Get activity objects for clickable links - create a list with history and activity pairs
+    recent_history_with_activities = []
+    for history in recent_history:
+        activity = None
+        if 'Visited activity:' in history.action:
+            activity_title = history.action.replace('Visited activity: ', '')
+            activity = Activity.objects.filter(title=activity_title).first()
+        elif 'Registered for activity:' in history.action:
+            activity_title = history.action.replace('Registered for activity: ', '')
+            activity = Activity.objects.filter(title=activity_title).first()
+        recent_history_with_activities.append({
+            'history': history,
+            'activity': activity
+        })
+    
+    # Set last visit cookie
+    from django.http import HttpResponse
+    from datetime import datetime
+    response = render(request, 'main/user_dashboard.html', {
+        'profile': profile,
+        'activities_created': activities_created,
+        'activities_registered': activities_registered,
+        'total_registrations': total_registrations,
+        'my_activities': my_activities,
+        'upcoming_registered': upcoming_registered,
+        'recent_history_with_activities': recent_history_with_activities,
+        'now': now,
     })
+    # Set cookie with formatted date/time
+    last_visit_str = timezone.now().strftime("%B %d, %Y at %I:%M %p")
+    response.set_cookie('last_visit', last_visit_str, max_age=31536000)  # 1 year expiry
+    return response
+
+
+@login_required
+def user_history(request):
+    # Exclude "Visited activities page" entries as they're noise
+    all_history_items = UserHistory.objects.filter(
+        user=request.user
+    ).exclude(
+        action='Visited activities page'
+    ).order_by('-timestamp')
+    
+    # Pagination - get page number from request
+    page = int(request.GET.get('page', 1))
+    items_per_page = 10
+    start = (page - 1) * items_per_page
+    end = start + items_per_page
+    
+    # Get items for current page
+    history_items = all_history_items[start:end]
+    total_count = all_history_items.count()
+    has_more = end < total_count
+    remaining_count = total_count - end if has_more else 0
+
+    # session data - get latest 5 activity views
+    session_activity_visits = request.session.get('activity_visits', {})
+    
+    # Get latest 5 activities viewed (convert to list of tuples and sort by count, then take top 5)
+    latest_activity_visits = []
+    if session_activity_visits:
+        # Get activities and their view counts
+        activity_ids = list(session_activity_visits.keys())[:5]  # Get latest 5
+        activities = Activity.objects.filter(id__in=activity_ids)
+        for activity in activities:
+            count = session_activity_visits.get(str(activity.id), 0)
+            latest_activity_visits.append((activity, count))
+
+    # cookie data - only last visit
+    cookie_last_visit = request.COOKIES.get('last_visit')
+    
+    # Check if this is an AJAX request (for loading more)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Return only the new items as HTML
+        from django.template.loader import render_to_string
+        html = render_to_string('main/user_history_items.html', {
+            'history_items': history_items,
+            'page': page,
+            'has_more': has_more,
+            'remaining_count': remaining_count,
+        })
+        return JsonResponse({'html': html, 'has_more': has_more, 'remaining_count': remaining_count})
+    
+    # Set last visit cookie
+    response = render(request, 'main/user_history.html', {
+        'history_items': history_items,
+        'latest_activity_visits': latest_activity_visits,
+        'cookie_last_visit': cookie_last_visit,
+        'has_more': has_more,
+        'total_count': total_count,
+        'remaining_count': remaining_count,
+        'page': page,
+    })
+    # Update cookie with current visit
+    last_visit_str = timezone.now().strftime("%B %d, %Y at %I:%M %p")
+    response.set_cookie('last_visit', last_visit_str, max_age=31536000)  # 1 year expiry
+    return response
 
 
 
@@ -444,4 +554,10 @@ def home(request):
         'session_visit_count': session_visit_count,
     }
     
-    return render(request, 'main/home.html', context)
+    # Set last visit cookie
+    response = render(request, 'main/home.html', context)
+    # Set cookie with formatted date/time (only for authenticated users)
+    if request.user.is_authenticated:
+        last_visit_str = timezone.now().strftime("%B %d, %Y at %I:%M %p")
+        response.set_cookie('last_visit', last_visit_str, max_age=31536000)  # 1 year expiry
+    return response
