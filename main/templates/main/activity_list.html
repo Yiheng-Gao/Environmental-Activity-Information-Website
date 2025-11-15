@@ -5,6 +5,12 @@
     {% if query %}Search results for "{{ query }}"{% else %}Upcoming Activities{% endif %}
 </h1>
 
+    <p class="text-muted">
+    This session visits to main page: {{ session_visit_count }}<br>
+    Total visits (from cookie): {{ cookie_total_visits }}<br>
+    Last visit (from cookie): {{ cookie_last_visit|default:"First time here" }}
+</p>
+
 <div class="row g-3">
   {% for a in activities %}
     <div class="col-md-6">

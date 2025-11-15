@@ -10,4 +10,6 @@ urlpatterns = [
     path('search-suggest/', views.search_suggest, name='search_suggest'),
     path('activity/<int:pk>/register/', views.register_activity, name='activity_register'),
     path('activity/<int:pk>/cancel/', views.cancel_registration, name='activity_cancel'),
+    path('history/', views.user_history, name='user_history'),
+
 ]

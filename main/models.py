@@ -70,3 +70,12 @@ class Registration(models.Model):
 
     def __str__(self):
         return f"{self.user.username} joined {self.joined_activity.title} ({self.status})"
+
+
+class UserHistory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='history')
+    action = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}: {self.action} on {self.timestamp}"

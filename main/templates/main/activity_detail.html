@@ -1,6 +1,9 @@
 {% extends 'main/base.html' %}
 {% block title %}{{ activity.title }}{% endblock %}
 {% block content %}
+<p class="text-muted">
+    You have viewed this activity {{ session_activity_visits }} times in this session.
+</p>
 
 <h2>{{ activity.title }}</h2>
 <p><strong>Category:</strong> {{ activity.category }}</p>

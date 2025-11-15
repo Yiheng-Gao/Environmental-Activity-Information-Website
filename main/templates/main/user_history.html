@@ -1,0 +1,44 @@
+{% extends 'main/base.html' %}
+{% block title %}User History{% endblock %}
+
+{% block content %}
+<h2>Your Activity History</h2>
+<hr>
+
+<h4>Summary (using cookies & sessions)</h4>
+<ul>
+  <li>Visits to main page this session: {{ session_main_visits }}</li>
+  <li>Total visits (cookie): {{ cookie_total_visits|default:"Unknown" }}</li>
+  <li>Last visit (cookie): {{ cookie_last_visit|default:"First time or cookie not set" }}</li>
+</ul>
+
+{% if session_activity_visits %}
+  <h5>Activity views this session:</h5>
+  <ul>
+    {% for act_id, count in session_activity_visits.items %}
+      <li>
+        {{ activity_title_map.act_id|default:"Activity #"|add:act_id }}:
+        viewed {{ count }} time{{ count|pluralize }}
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<hr>
+
+<h4>Detailed history (database)</h4>
+{% if history_items %}
+  <ul class="list-group">
+    {% for h in history_items %}
+      <li class="list-group-item">
+        {{ h.action }}  
+        <br>
+        <small class="text-muted">{{ h.timestamp }}</small>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No history yet.</p>
+{% endif %}
+
+{% endblock %}
