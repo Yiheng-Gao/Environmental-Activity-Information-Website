@@ -19,6 +19,7 @@ class Activity(models.Model):
         ('Recycling', 'Recycling'),
         ('Cleanup', 'Cleanup'),
         ('Awareness', 'Awareness'),
+        ('Education', 'Education'),
         ('Other', 'Other'),
     ]
 
