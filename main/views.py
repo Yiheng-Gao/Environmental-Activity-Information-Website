@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from .forms import CustomSignupForm
 
 def activity_list(request):
     q = request.GET.get('q', '')
@@ -67,14 +68,13 @@ def activity_list(request):
 
 def signup(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomSignupForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # auto-login after signup (optional)
             login(request, user)
             return redirect('activity_list')
     else:
-        form = UserCreationForm()
+        form = CustomSignupForm()
     return render(request, 'registration/signup.html', {'form': form})
 
 from django.contrib.auth.decorators import login_required
