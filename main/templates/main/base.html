@@ -1,4 +1,5 @@
 <!doctype html>
+{% load tz %}
 <html>
 <head>
   <meta charset="utf-8">
@@ -80,6 +81,48 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
+
+
+<footer class="bg-success text-white mt-5 pt-4 pb-4">
+  <div class="container">
+    <div class="row">
+
+      <!-- Follow Us -->
+      <div class="col-md-4 mb-3">
+        <h5>Follow Us</h5>
+        <a href="#" class="text-white d-block text-decoration-none mb-1">🐦 X (Twitter)</a>
+        <a href="#" class="text-white d-block text-decoration-none mb-1">📘 Facebook</a>
+        <a href="#" class="text-white d-block text-decoration-none mb-1">📸 Instagram</a>
+        <a href="#" class="text-white d-block text-decoration-none">▶️ YouTube</a>
+      </div>
+
+      <!-- About Us -->
+      <div class="col-md-4 mb-3">
+        <h5>About Us</h5>
+        <p class="mb-0" style="max-width: 250px;">
+          We are a community-driven platform promoting environmental activities
+          such as tree planting, recycling, and cleanups. Join us to help make
+          our planet greener!
+        </p>
+      </div>
+
+      <!-- Contact Us -->
+      <div class="col-md-4 mb-3">
+        <h5>Contact Us</h5>
+        <p class="mb-1">📧 Email: eco-support@example.com</p>
+        <p class="mb-1">📞 Phone: +1 (123) 456-7890</p>
+        <p class="mb-0">🌍 Location: Windsor, Ontario, Canada</p>
+      </div>
+
+    </div>
+
+    <hr class="border-light">
+
+    <div class="text-center">
+      <p class="mb-0">&copy; {{ now|date:"Y" }} Eco Activities. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
 
 </body>
 </html>
