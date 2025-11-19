@@ -8,23 +8,48 @@
 
 <div class="row mt-4">
     <div class="col-md-4">
-        <h5>Phone</h5>
-        <p>📞 +1 (123) 456-7890</p>
+        <h5><i class="bi bi-telephone me-2"></i>Phone</h5>
+        <p class="ms-4">+1 (123) 456-7890</p>
 
-        <h5>Email</h5>
-        <p>📧 eco-support@example.com</p>
+        <h5 class="mt-4"><i class="bi bi-envelope me-2"></i>Email</h5>
+        <p class="ms-4">eco-support@example.com</p>
 
-        <h5>Location</h5>
-        <p>🌍 Windsor, Ontario, Canada</p>
+        <h5 class="mt-4"><i class="bi bi-geo-alt me-2"></i>Location</h5>
+        <p class="ms-4">Windsor, Ontario, Canada</p>
     </div>
 
     <div class="col-md-8">
-        <h5>Send us a Message</h5>
+        <h5><i class="bi bi-chat-dots me-2"></i>Send us a Message</h5>
         <form method="post" class="mt-3">
             {% csrf_token %}
-            {{ form.as_p }}
+            <div class="mb-3">
+                <label for="{{ form.name.id_for_label }}" class="form-label">
+                    <i class="bi bi-person me-1"></i>{{ form.name.label }}
+                </label>
+                {{ form.name }}
+            </div>
+            <div class="mb-3">
+                <label for="{{ form.email.id_for_label }}" class="form-label">
+                    <i class="bi bi-envelope me-1"></i>{{ form.email.label }}
+                </label>
+                {{ form.email }}
+            </div>
+            <div class="mb-3">
+                <label for="{{ form.subject.id_for_label }}" class="form-label">
+                    <i class="bi bi-tag me-1"></i>{{ form.subject.label }}
+                </label>
+                {{ form.subject }}
+            </div>
+            <div class="mb-3">
+                <label for="{{ form.message.id_for_label }}" class="form-label">
+                    <i class="bi bi-chat-text me-1"></i>{{ form.message.label }}
+                </label>
+                {{ form.message }}
+            </div>
 
-            <button class="btn btn-success">Send Message</button>
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-send me-2"></i>Send Message
+            </button>
         </form>
     </div>
 </div>
