@@ -11,9 +11,24 @@ class ActivityForm(forms.ModelForm):
 
 
 class MediaForm(forms.ModelForm):
+    file = forms.FileField(
+        label="",
+        help_text="Click to upload or drag and drop",
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/*,video/*',
+            'id': 'media-upload-input'
+        })
+    )
+    
     class Meta:
         model = Media
         fields = ['file']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Store description as a custom attribute
+        self.upload_description = "Images or Videos (PNG, JPG, MP4, etc.)"
 
 
 class CustomSignupForm(UserCreationForm):
