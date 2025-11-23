@@ -29,6 +29,8 @@ ALLOWED_HOSTS = []
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
 # Application definition
 
 INSTALLED_APPS = [

@@ -226,3 +226,6 @@ def contact_us(request):
         form = ContactMessageForm()
 
     return render(request, 'main/contact_us.html', {'form': form})
+
+def about_us(request):
+    return render(request, 'main/about_us.html')

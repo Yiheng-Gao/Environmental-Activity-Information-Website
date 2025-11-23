@@ -28,9 +28,12 @@
     <button class="btn btn-light ms-2" type="submit">Search</button>
 </form>
 
-    <div class="ms-auto">
+    <div class="ms-auto d-flex align-items-center">
         <a href="{% url 'contact_us' %}" class="btn btn-light btn-sm me-3">
         Contact Us
+      </a>
+    <a href="{% url 'about_us' %}" class="btn btn-light btn-sm me-3">
+        About Us
       </a>
       {% if user.is_authenticated %}
          <a href="{% url 'user_history' %}" class="text-white me-2 text-decoration-none">
@@ -100,7 +103,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       <!-- About Us -->
       <div class="col-md-4 mb-3">
-        <h5>About Us</h5>
+        <h5><a href="{% url 'about_us' %}" class="text-white text-decoration-underline">About Us</a></h5>
         <p class="mb-0" style="max-width: 250px;">
           We are a community-driven platform promoting environmental activities
           such as tree planting, recycling, and cleanups. Join us to help make
