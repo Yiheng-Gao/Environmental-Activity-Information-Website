@@ -1,6 +1,6 @@
 from django import forms
 from .models import Activity
-from .models import Media
+from .models import Media, ContactMessage
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
@@ -29,3 +29,12 @@ class CustomSignupForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+
+class ContactMessageForm(forms.ModelForm):
+    class Meta:
+        model = ContactMessage
+        fields = ["name", "email", "subject", "message"]
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 5}),
+        }

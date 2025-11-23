@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from .forms import CustomSignupForm
+from .forms import CustomSignupForm, ContactMessageForm
 
 def activity_list(request):
     q = request.GET.get('q', '')
@@ -215,3 +215,14 @@ def log_user_history(user, action):
             action=action
         )
 
+def contact_us(request):
+    if request.method == "POST":
+        form = ContactMessageForm(request.POST)
+        if form.is_valid():
+            form.save()  # save to database
+            messages.success(request, "Thank you! Your message has been sent.")
+            return redirect('contact_us')
+    else:
+        form = ContactMessageForm()
+
+    return render(request, 'main/contact_us.html', {'form': form})

@@ -11,5 +11,7 @@ urlpatterns = [
     path('activity/<int:pk>/register/', views.register_activity, name='activity_register'),
     path('activity/<int:pk>/cancel/', views.cancel_registration, name='activity_cancel'),
     path('history/', views.user_history, name='user_history'),
+    path('contact/', views.contact_us, name='contact_us'),
+
 
 ]

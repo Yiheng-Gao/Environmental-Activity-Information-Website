@@ -29,7 +29,9 @@
 </form>
 
     <div class="ms-auto">
-
+        <a href="{% url 'contact_us' %}" class="btn btn-light btn-sm me-3">
+        Contact Us
+      </a>
       {% if user.is_authenticated %}
          <a href="{% url 'user_history' %}" class="text-white me-2 text-decoration-none">
             Hi, {{ user.username }}
@@ -108,7 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       <!-- Contact Us -->
       <div class="col-md-4 mb-3">
-        <h5>Contact Us</h5>
+          <h5><a href="{% url 'contact_us' %}" class="text-white text-decoration-underline">Contact Us</a></h5>
         <p class="mb-1">📧 Email: eco-support@example.com</p>
         <p class="mb-1">📞 Phone: +1 (123) 456-7890</p>
         <p class="mb-0">🌍 Location: Windsor, Ontario, Canada</p>
