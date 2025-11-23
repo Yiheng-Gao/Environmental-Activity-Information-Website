@@ -1,81 +1,395 @@
 {% extends 'main/base.html' %}
 {% block title %}{{ activity.title }}{% endblock %}
 {% block content %}
-<p class="text-muted">
-    You have viewed this activity {{ session_activity_visits }} times in this session.
-</p>
 
-<div class="d-flex justify-content-between align-items-start mb-3">
-    <div>
-        <h2 class="mb-2">{{ activity.title }}</h2>
-        <div>
-            <span class="badge bg-success me-2">{{ activity.category }}</span>
-            {% if activity.created_by.profile.is_organizer %}
-                <span class="badge bg-warning text-dark">
-                    <i class="bi bi-shield-check me-1"></i>Official Event
-                </span>
-            {% endif %}
-            {% if activity.is_featured %}
-                <span class="badge bg-info text-dark">
-                    <i class="bi bi-star-fill me-1"></i>Featured
-                </span>
-            {% endif %}
+<!-- Hero Section with Image -->
+{% if activity.media.first and activity.media.first.is_image %}
+<div class="position-relative mb-4" style="height: 400px; overflow: hidden; border-radius: 10px;">
+    <img src="{{ activity.media.first.file.url }}" alt="{{ activity.title }}" 
+         class="w-100 h-100" style="object-fit: cover;">
+    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-end" 
+         style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);">
+        <div class="container-fluid p-4 text-white">
+            <div class="d-flex justify-content-between align-items-end flex-wrap">
+                <div>
+                    <h1 class="display-5 fw-bold mb-2">{{ activity.title }}</h1>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge bg-success fs-6">{{ activity.category }}</span>
+                        {% if activity.created_by.profile.is_organizer %}
+                            <span class="badge bg-warning text-dark fs-6">
+                                <i class="bi bi-shield-check me-1"></i>Official Event
+                            </span>
+                        {% endif %}
+                        {% if activity.is_featured %}
+                            <span class="badge bg-info text-dark fs-6">
+                                <i class="bi bi-star-fill me-1"></i>Featured
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if user.is_staff %}
+                    <form method="post" action="{% url 'toggle_featured' activity.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        {% if activity.is_featured %}
+                            <button type="submit" class="btn btn-light btn-sm" title="Remove from featured">
+                                <i class="bi bi-star-fill me-1"></i>Unfeature
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn btn-light btn-sm" title="Mark as featured">
+                                <i class="bi bi-star me-1"></i>Mark as Featured
+                            </button>
+                        {% endif %}
+                    </form>
+                {% endif %}
+            </div>
         </div>
     </div>
-    {% if user.is_staff %}
-        <form method="post" action="{% url 'toggle_featured' activity.pk %}" style="display:inline;">
-            {% csrf_token %}
-            {% if activity.is_featured %}
-                <button type="submit" class="btn btn-sm btn-outline-warning" title="Remove from featured">
-                    <i class="bi bi-star-fill me-1"></i>Unfeature
-                </button>
-            {% else %}
-                <button type="submit" class="btn btn-sm btn-outline-info" title="Mark as featured">
-                    <i class="bi bi-star me-1"></i>Mark as Featured
-                </button>
-            {% endif %}
-        </form>
-    {% endif %}
 </div>
-{% if activity.created_by.profile.is_organizer and activity.created_by.profile.organization_name %}
-    <p class="text-muted">
-        <strong>Organized by:</strong> {{ activity.created_by.profile.organization_name }}
-    </p>
+{% else %}
+<!-- Hero Section without Image -->
+<div class="bg-success text-white p-4 rounded mb-4">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <h1 class="display-5 fw-bold mb-2">{{ activity.title }}</h1>
+            <div class="d-flex gap-2 flex-wrap">
+                <span class="badge bg-light text-success fs-6">{{ activity.category }}</span>
+                {% if activity.created_by.profile.is_organizer %}
+                    <span class="badge bg-warning text-dark fs-6">
+                        <i class="bi bi-shield-check me-1"></i>Official Event
+                    </span>
+                {% endif %}
+                {% if activity.is_featured %}
+                    <span class="badge bg-info text-dark fs-6">
+                        <i class="bi bi-star-fill me-1"></i>Featured
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+        {% if user.is_staff %}
+            <form method="post" action="{% url 'toggle_featured' activity.pk %}" style="display:inline;">
+                {% csrf_token %}
+                {% if activity.is_featured %}
+                    <button type="submit" class="btn btn-light btn-sm" title="Remove from featured">
+                        <i class="bi bi-star-fill me-1"></i>Unfeature
+                    </button>
+                {% else %}
+                    <button type="submit" class="btn btn-light btn-sm" title="Mark as featured">
+                        <i class="bi bi-star me-1"></i>Mark as Featured
+                    </button>
+                {% endif %}
+            </form>
+        {% endif %}
+    </div>
+</div>
 {% endif %}
-<p><strong>Location:</strong> {{ activity.location }}</p>
-<p><strong>Date:</strong> {{ activity.date }}</p>
-<p><strong>Hosted by:</strong> {{ activity.created_by.username }}</p>
-<p>{{ activity.description }}</p>
 
-<hr>
+<div class="row g-4">
+    <!-- Main Content Column -->
+    <div class="col-lg-8">
+        <!-- Description Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h3 class="card-title mb-3">
+                    <i class="bi bi-info-circle text-success me-2"></i>About This Activity
+                </h3>
+                <p class="card-text" style="white-space: pre-wrap; line-height: 1.8;">{{ activity.description }}</p>
+            </div>
+        </div>
 
-<h4>Media Gallery</h4>
+        <!-- Media Gallery Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h4 class="card-title mb-3">
+                    <i class="bi bi-images text-success me-2"></i>Media Gallery
+                </h4>
+                {% if media_items %}
 <div class="row g-3">
   {% for m in media_items %}
-    <div class="col-md-3">
+                            <div class="col-md-4 col-sm-6">
+                                <div class="card border-0">
       {% if m.is_image %}
-        <img src="{{ m.file.url }}" alt="" class="img-fluid rounded">
+                                        <img src="{{ m.file.url }}" alt="Media" 
+                                             class="card-img-top rounded" 
+                                             style="height: 200px; object-fit: cover; cursor: pointer;"
+                                             onclick="window.open('{{ m.file.url }}', '_blank')">
       {% elif m.is_video %}
-        <video src="{{ m.file.url }}" controls class="img-fluid rounded"></video>
+                                        <video src="{{ m.file.url }}" controls 
+                                               class="card-img-top rounded" 
+                                               style="height: 200px; object-fit: cover;"></video>
       {% else %}
-        <a href="{{ m.file.url }}" target="_blank">Download file</a>
+                                        <div class="card-body text-center p-4">
+                                            <i class="bi bi-file-earmark text-success" style="font-size: 3rem;"></i>
+                                            <a href="{{ m.file.url }}" target="_blank" class="btn btn-outline-success btn-sm mt-2">
+                                                <i class="bi bi-download me-1"></i>Download
+                                            </a>
+                                        </div>
       {% endif %}
     </div>
-  {% empty %}
-    <p>No media uploaded yet.</p>
+                            </div>
   {% endfor %}
 </div>
+                {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-image" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No media uploaded yet.</p>
+                    </div>
+                {% endif %}
 
 {% if user.is_authenticated %}
-  <hr>
-  <h5>Upload a new image or video</h5>
-  <form method="post" enctype="multipart/form-data">
+                    <hr class="my-4">
+                    <h5 class="mb-3">
+                        <i class="bi bi-cloud-upload text-success me-2"></i>Upload Media
+                    </h5>
+                    <form method="post" enctype="multipart/form-data" id="media-upload-form">
+                        {% csrf_token %}
+                        <div class="upload-area border border-2 border-dashed rounded p-4 text-center mb-3" 
+                             id="upload-area"
+                             style="border-color: #28a745 !important; background-color: #f8f9fa; cursor: pointer; transition: all 0.3s;">
+                            <input type="file" name="file" id="media-upload-input" 
+                                   class="d-none" accept="image/*,video/*">
+                            <div id="upload-content">
+                                <i class="bi bi-cloud-arrow-up text-success" style="font-size: 3rem;"></i>
+                                <p class="mt-3 mb-1 fw-bold">{{ media_form.file.help_text|default:"Click to upload or drag and drop" }}</p>
+                                <p class="text-muted small mb-0">{{ media_form.upload_description|default:"Images or Videos (PNG, JPG, MP4, etc.)" }}</p>
+                            </div>
+                            <div id="file-preview" class="d-none mt-3">
+                                <div class="alert alert-info d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-file-earmark me-2" style="font-size: 1.5rem;"></i>
+                                        <div class="text-start">
+                                            <strong id="file-name"></strong>
+                                            <p class="mb-0 small text-muted" id="file-size"></p>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="remove-file">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100" id="upload-btn" disabled>
+                            <i class="bi bi-upload me-2"></i>Upload Media
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Please <a href="{% url 'login' %}" class="alert-link">log in</a> to upload media.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Column -->
+    <div class="col-lg-4">
+        <!-- Registration Card -->
+        <div class="card shadow-sm mb-4 border-success">
+            <div class="card-body">
+                {% if user.is_authenticated %}
+                    {% if is_registered %}
+                        <div class="alert alert-success mb-3">
+                            <i class="bi bi-check-circle me-2"></i>You are registered for this activity!
+                        </div>
+                        <form method="post" action="{% url 'activity_cancel' activity.pk %}">
     {% csrf_token %}
-    {{ media_form.file }}
-    <button type="submit" class="btn btn-success mt-2">Upload</button>
+                            <button type="submit" class="btn btn-outline-danger w-100">
+                                <i class="bi bi-x-circle me-1"></i>Cancel Registration
+                            </button>
   </form>
 {% else %}
-  <p class="mt-3">Please <a href="{% url 'login' %}">log in</a> to upload media.</p>
+                        <form method="post" action="{% url 'activity_register' activity.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success w-100 btn-lg">
+                                <i class="bi bi-person-plus me-2"></i>Register for This Activity
+                            </button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Please <a href="{% url 'login' %}" class="alert-link">log in</a> to register.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Activity Details Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-calendar-event text-success me-2"></i>Event Details
+                </h5>
+                <ul class="list-unstyled">
+                    <li class="mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-geo-alt-fill text-success me-3 mt-1" style="font-size: 1.2rem;"></i>
+                            <div>
+                                <strong>Location</strong>
+                                <p class="mb-0 text-muted">{{ activity.location }}</p>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-calendar-check text-success me-3 mt-1" style="font-size: 1.2rem;"></i>
+                            <div>
+                                <strong>Date & Time</strong>
+                                <p class="mb-0 text-muted">{{ activity.date|date:"F d, Y" }} at {{ activity.date|time:"g:i A" }}</p>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-people text-success me-3 mt-1" style="font-size: 1.2rem;"></i>
+                            <div>
+                                <strong>Participants</strong>
+                                <p class="mb-0 text-muted">{{ participant_count }} registered</p>
+                            </div>
+                        </div>
+                    </li>
+                    {% if activity.created_by.profile.is_organizer and activity.created_by.profile.organization_name %}
+                        <li class="mb-3">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-building text-success me-3 mt-1" style="font-size: 1.2rem;"></i>
+                                <div>
+                                    <strong>Organized by</strong>
+                                    <p class="mb-0 text-muted">{{ activity.created_by.profile.organization_name }}</p>
+                                </div>
+                            </div>
+                        </li>
 {% endif %}
+                    <li>
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-person text-success me-3 mt-1" style="font-size: 1.2rem;"></i>
+                            <div>
+                                <strong>Hosted by</strong>
+                                <p class="mb-0 text-muted">{{ activity.created_by.username }}</p>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Category Card -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-tag text-success me-2"></i>Category
+                </h5>
+                <span class="badge bg-success fs-6 p-2">{{ activity.category }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    .upload-area:hover {
+        background-color: #e9ecef !important;
+        border-color: #28a745 !important;
+    }
+    .upload-area.dragover {
+        background-color: #d4edda !important;
+        border-color: #28a745 !important;
+        border-style: solid !important;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('upload-area');
+    const fileInput = document.getElementById('media-upload-input');
+    const uploadForm = document.getElementById('media-upload-form');
+    const uploadContent = document.getElementById('upload-content');
+    const filePreview = document.getElementById('file-preview');
+    const fileName = document.getElementById('file-name');
+    const fileSize = document.getElementById('file-size');
+    const removeFileBtn = document.getElementById('remove-file');
+    const uploadBtn = document.getElementById('upload-btn');
+
+    if (uploadArea && fileInput) {
+        // Click to select file
+        uploadArea.addEventListener('click', function(e) {
+            if (e.target !== removeFileBtn && !removeFileBtn.contains(e.target)) {
+                fileInput.click();
+            }
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect(files[0]);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        // Remove file
+        if (removeFileBtn) {
+            removeFileBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                fileInput.value = '';
+                uploadContent.classList.remove('d-none');
+                filePreview.classList.add('d-none');
+                uploadBtn.disabled = true;
+            });
+        }
+
+        function handleFileSelect(file) {
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/mov', 'video/avi', 'video/quicktime'];
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi', 'mkv'];
+            
+            if (!validExtensions.includes(fileExtension)) {
+                alert('Please select a valid image or video file (JPG, PNG, GIF, MP4, MOV, AVI, MKV).');
+                fileInput.value = '';
+                return;
+            }
+
+            // Show preview
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            uploadContent.classList.add('d-none');
+            filePreview.classList.remove('d-none');
+            uploadBtn.disabled = false;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+    }
+});
+</script>
 
 {% endblock %}

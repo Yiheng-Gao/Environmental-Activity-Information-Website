@@ -189,6 +189,16 @@ class ActivityDetailView(DetailView):
         context['session_activity_visits'] = self.request.session['activity_visits'].get(
             str(self.object.pk), 1
         )
+        # Check if user is registered
+        context['is_registered'] = False
+        if self.request.user.is_authenticated:
+            context['is_registered'] = Registration.objects.filter(
+                user=self.request.user,
+                joined_activity=self.object,
+                status='joined'
+            ).exists()
+        # Get participant count
+        context['participant_count'] = self.object.registrations.filter(status='joined').count()
         return context
 
 
