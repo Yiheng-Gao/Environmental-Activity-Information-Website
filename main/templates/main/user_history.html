@@ -1,44 +1,120 @@
 {% extends 'main/base.html' %}
 {% block title %}User History{% endblock %}
-
 {% block content %}
-<h2>Your Activity History</h2>
-<hr>
 
-<h4>Summary (using cookies & sessions)</h4>
-<ul>
-  <li>Visits to main page this session: {{ session_main_visits }}</li>
-  <li>Total visits (cookie): {{ cookie_total_visits|default:"Unknown" }}</li>
-  <li>Last visit (cookie): {{ cookie_last_visit|default:"First time or cookie not set" }}</li>
-</ul>
-
-{% if session_activity_visits %}
-  <h5>Activity views this session:</h5>
-  <ul>
-    {% for act_id, count in session_activity_visits.items %}
-      <li>
-        {{ activity_title_map.act_id|default:"Activity #"|add:act_id }}:
-        viewed {{ count }} time{{ count|pluralize }}
-      </li>
-    {% endfor %}
-  </ul>
-{% endif %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Your Activity History</h2>
+    <a href="{% url 'user_dashboard' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+    </a>
+</div>
 
 <hr>
 
-<h4>Detailed history (database)</h4>
-{% if history_items %}
-  <ul class="list-group">
-    {% for h in history_items %}
-      <li class="list-group-item">
-        {{ h.action }}  
-        <br>
-        <small class="text-muted">{{ h.timestamp }}</small>
-      </li>
-    {% endfor %}
-  </ul>
+<h4>Summary</h4>
+{% if cookie_last_visit %}
+    <p class="mb-3">
+        <strong>Last Visit:</strong> {{ cookie_last_visit }}
+    </p>
 {% else %}
-  <p>No history yet.</p>
+    <p class="mb-3 text-muted">Last visit information not available.</p>
 {% endif %}
+
+{% if latest_activity_visits %}
+    <h5 class="mt-4">Latest 5 Activities Viewed in this session:</h5>
+    <ul class="list-group">
+        {% for activity, count in latest_activity_visits %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <a href="{% url 'activity_detail' activity.pk %}" class="text-decoration-none">
+                    {{ activity.title }}
+                </a>
+                <span class="badge bg-primary rounded-pill">{{ count }} time{{ count|pluralize }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p class="text-muted">No activities viewed in this session.</p>
+{% endif %}
+
+<hr>
+
+<h4>Detailed History</h4>
+{% if history_items %}
+    <ul class="list-group" id="historyList">
+        {% for h in history_items %}
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>{{ h.action }}</span>
+                    <small class="text-muted">{{ h.timestamp|date:"M d, Y g:i A" }}</small>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+    {% if has_more %}
+        <div class="text-center mt-3" id="loadMoreContainer">
+            <button type="button" class="btn btn-outline-primary" id="loadMoreBtn" data-page="{{ page|add:1 }}">
+                <i class="bi bi-chevron-down me-1"></i>Show More ({{ remaining_count }} more)
+            </button>
+        </div>
+    {% endif %}
+{% else %}
+    <p class="text-muted">No history yet.</p>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', function() {
+            const btn = this;
+            const page = parseInt(btn.dataset.page);
+            const originalText = btn.innerHTML;
+            
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading...';
+            
+            fetch('{% url "user_history" %}?page=' + page, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.html) {
+                        // Parse the HTML response
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(data.html, 'text/html');
+                        const newItems = doc.querySelectorAll('li');
+                        
+                        // Append new items to the list
+                        const historyList = document.getElementById('historyList');
+                        newItems.forEach(item => {
+                            historyList.appendChild(item);
+                        });
+                        
+                        // Update or remove the button
+                        if (data.has_more) {
+                            btn.dataset.page = page + 1;
+                            btn.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Show More (' + data.remaining_count + ' more)';
+                            btn.disabled = false;
+                        } else {
+                            document.getElementById('loadMoreContainer').remove();
+                        }
+                    } else {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading more history:', error);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    alert('Error loading more history. Please try again.');
+                });
+        });
+    }
+});
+</script>
 
 {% endblock %}
