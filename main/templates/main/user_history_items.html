@@ -1,0 +1,8 @@
+{% for h in history_items %}
+    <li class="list-group-item">
+        <div class="d-flex justify-content-between align-items-center">
+            <span>{{ h.action }}</span>
+            <small class="text-muted">{{ h.timestamp|date:"M d, Y g:i A" }}</small>
+        </div>
+    </li>
+{% endfor %}
