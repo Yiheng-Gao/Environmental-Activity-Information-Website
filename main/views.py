@@ -283,6 +283,34 @@ def toggle_featured(request, pk):
     
     return redirect('activity_detail', pk=pk)
 
+
+@login_required
+def activity_delete(request, pk):
+    """Delete an activity - only admin/superuser or creator can delete"""
+    activity = get_object_or_404(Activity, pk=pk)
+    
+    # Check permissions: staff/superuser can delete any, creator can delete their own
+    can_delete = request.user.is_staff or request.user.is_superuser or activity.created_by == request.user
+    
+    if not can_delete:
+        messages.error(request, "You don't have permission to delete this activity.")
+        return redirect('activity_detail', pk=pk)
+    
+    if request.method == 'POST':
+        activity_title = activity.title
+        activity.delete()
+        
+        UserHistory.objects.create(
+            user=request.user,
+            action=f"Deleted activity: {activity_title}"
+        )
+        
+        messages.success(request, f"Activity '{activity_title}' has been deleted successfully.")
+        return redirect('activity_list')
+    
+    # GET request - show confirmation (handled by modal in template)
+    return redirect('activity_detail', pk=pk)
+
 @login_required
 def user_history(request):
     history_items = UserHistory.objects.filter(
