@@ -87,20 +87,7 @@
           <p class="card-text mb-1"><small class="text-muted"><i class="bi bi-person"></i> {{ a.created_by }}</small></p>
           <p class="card-text mb-3">
             <small class="text-muted">
-              <i class="bi bi-calendar"></i> {{ a.date|date:"M d, Y" }}
-              {% if date_filter == 'upcoming' %}
-                {% with time_diff=a.date|timesince:now %}
-                  {% if time_diff and "0 minutes" not in time_diff %}
-                    <span class="text-success">• {{ time_diff }} from now</span>
-                  {% endif %}
-                {% endwith %}
-              {% else %}
-                {% with time_diff=a.date|timesince:now %}
-                  {% if time_diff and "0 minutes" not in time_diff %}
-                    <span class="text-muted">• {{ time_diff }} ago</span>
-                  {% endif %}
-                {% endwith %}
-              {% endif %}
+              <i class="bi bi-calendar"></i> {{ a.date|date:"M d, Y" }} at {{ a.date|time:"g:i A" }}
             </small>
           </p>
           
