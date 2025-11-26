@@ -8,6 +8,13 @@ class ActivityForm(forms.ModelForm):
     class Meta:
         model = Activity
         fields = ['category', 'title', 'description', 'location', 'date']
+        widgets = {
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'location': forms.TextInput(attrs={'class': 'form-control'}),
+            'date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+        }
 
 
 class MediaForm(forms.ModelForm):

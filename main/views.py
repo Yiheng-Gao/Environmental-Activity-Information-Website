@@ -119,14 +119,29 @@ from .forms import ActivityForm, MediaForm
 def activity_create(request):
     if request.method == 'POST':
         form = ActivityForm(request.POST)
+        media_form = MediaForm(request.POST, request.FILES)
         if form.is_valid():
             activity = form.save(commit=False)
             activity.created_by = request.user  # link to current user
             activity.save()
-            return redirect('activity_list')
+            
+            # Handle media upload during creation (only one file allowed)
+            if media_form.is_valid() and 'file' in request.FILES:
+                media = media_form.save(commit=False)
+                media.activity = activity
+                media.created_by = request.user
+                media.save()
+            
+            UserHistory.objects.create(
+                user=request.user,
+                action=f"Created activity: {activity.title}"
+            )
+            
+            return redirect('activity_detail', pk=activity.pk)
     else:
         form = ActivityForm()
-    return render(request, 'main/activity_form.html', {'form': form})
+        media_form = MediaForm()
+    return render(request, 'main/activity_form.html', {'form': form, 'media_form': media_form})
 
 class ActivityDetailView(DetailView):
     model = Activity
@@ -156,11 +171,29 @@ class ActivityDetailView(DetailView):
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        """Handle media uploads."""
+        """Handle media uploads - only allowed after event date if user is registered."""
         self.object = self.get_object()
 
         if not request.user.is_authenticated:
             return redirect('login')
+
+        # Check if user can upload: event must have passed AND user must be registered
+        now = timezone.now()
+        event_passed = self.object.date < now
+        is_registered = Registration.objects.filter(
+            user=request.user,
+            joined_activity=self.object,
+            status='joined'
+        ).exists()
+        
+        can_upload = event_passed and is_registered
+        
+        if not can_upload:
+            if not event_passed:
+                messages.error(request, "You can only upload media after the event has passed.")
+            elif not is_registered:
+                messages.error(request, "You must be registered for this activity to upload media after the event.")
+            return redirect('activity_detail', pk=self.object.pk)
 
         form = MediaForm(request.POST, request.FILES)
 
@@ -174,11 +207,14 @@ class ActivityDetailView(DetailView):
                 user=request.user,
                 action=f"Uploaded media to: {self.object.title}"
             )
+            
+            messages.success(request, "Media uploaded successfully!")
 
             return redirect('activity_detail', pk=self.object.pk)
 
-        # DEBUG: Show errors so we know what’s wrong
+        # DEBUG: Show errors so we know what's wrong
         print("MEDIA UPLOAD ERRORS:", form.errors)
+        messages.error(request, "Error uploading media. Please try again.")
 
         return self.get(request, *args, **kwargs)
 
@@ -199,6 +235,12 @@ class ActivityDetailView(DetailView):
             ).exists()
         # Get participant count
         context['participant_count'] = self.object.registrations.filter(status='joined').count()
+        
+        # Check if user can upload media (after event date AND registered)
+        now = timezone.now()
+        context['event_passed'] = self.object.date < now
+        context['can_upload_media'] = context['event_passed'] and context['is_registered'] and self.request.user.is_authenticated
+        
         return context
 
 

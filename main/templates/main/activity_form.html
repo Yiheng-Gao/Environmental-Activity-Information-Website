@@ -1,11 +1,32 @@
 {% extends 'main/base.html' %}
 {% block title %}Create Activity{% endblock %}
 {% block content %}
-<h2>Create a New Activity</h2>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit" class="btn btn-success">Save</button>
-  <a href="{% url 'activity_list' %}" class="btn btn-secondary">Cancel</a>
-</form>
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h2 class="mb-4">Create a New Activity</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            
+            <div class="mb-4">
+                <label for="{{ media_form.file.id_for_label }}" class="form-label">
+                    <i class="bi bi-image me-1"></i>Upload Media (Optional - One file only)
+                </label>
+                {{ media_form.file }}
+                <small class="form-text text-muted d-block mt-1">
+                    You can upload one image or video when creating the activity. Additional uploads are available after the event if you're registered.
+                </small>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle me-1"></i>Create Activity
+                </button>
+                <a href="{% url 'activity_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
