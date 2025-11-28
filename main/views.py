@@ -9,62 +9,79 @@ from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .forms import CustomSignupForm, ContactMessageForm
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 
-def activity_list(request):
-    q = request.GET.get('q', '')
+class ActivityListView(ListView):
+    model = Activity
+    template_name = "main/activity_list.html"
+    context_object_name = "activities"
 
-    if q:
-        activities = Activity.objects.filter(
-            Q(title__icontains=q) |
-            Q(description__icontains=q) |
-            Q(location__icontains=q)
-        ).order_by('-created_at')
-    else:
-        activities = Activity.objects.order_by('-created_at')
+    def get_queryset(self):
+        q = self.request.GET.get('q', '')
+        if q:
+            return Activity.objects.filter(
+                Q(title__icontains=q) |
+                Q(description__icontains=q) |
+                Q(location__icontains=q)
+            ).order_by('-created_at')
+        return Activity.objects.order_by('-created_at')
 
-    session_visit_count = request.session.get('main_page_visits', 0) + 1
-    request.session['main_page_visits'] = session_visit_count
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        request = self.request
 
-    raw_total = request.COOKIES.get('total_visits', '0')
-    try:
-        total_visits = int(raw_total) + 1
-    except ValueError:
-        total_visits = 1
+        q = request.GET.get('q', '')
 
-    last_visit = request.COOKIES.get('last_visit')
+        # session
+        session_visit_count = request.session.get('main_page_visits', 0) + 1
+        request.session['main_page_visits'] = session_visit_count
 
-    registered_ids = set()
-    if request.user.is_authenticated:
-        registered_ids = set(
-            Registration.objects.filter(
-                user=request.user,
-                status='joined'
-            ).values_list('joined_activity_id', flat=True)
-        )
+        # cookies
+        raw_total = request.COOKIES.get('total_visits', '0')
+        try:
+            total_visits = int(raw_total) + 1
+        except ValueError:
+            total_visits = 1
 
-    context = {
-        'activities': activities,
-        'query': q,
-        'registered_ids': registered_ids,
-        'session_visit_count': session_visit_count,
-        'cookie_total_visits': total_visits,
-        'cookie_last_visit': last_visit,
-    }
+        last_visit = request.COOKIES.get('last_visit')
 
-    response = render(request, 'main/activity_list.html', context)
+        # user registrations
+        registered_ids = set()
+        if request.user.is_authenticated:
+            registered_ids = set(
+                Registration.objects.filter(
+                    user=request.user,
+                    status='joined'
+                ).values_list('joined_activity_id', flat=True)
+            )
 
-    max_age = 30 * 24 * 60 * 60  # 30 days in seconds
-    response.set_cookie('total_visits', total_visits, max_age=max_age)
-    response.set_cookie('last_visit', timezone.now().isoformat(), max_age=max_age)
+        # Add to context
+        context.update({
+            'query': q,
+            'registered_ids': registered_ids,
+            'session_visit_count': session_visit_count,
+            'cookie_total_visits': total_visits,
+            'cookie_last_visit': last_visit,
+        })
 
-    # Optional: also log DB history
-    if request.user.is_authenticated:
-        UserHistory.objects.create(
-            user=request.user,
-            action="Visited main page"
-        )
+        return context
 
-    return response
+    def render_to_response(self, context, **response_kwargs):
+        """Attach cookies to the response."""
+        response = super().render_to_response(context, **response_kwargs)
+
+        max_age = 30 * 24 * 60 * 60
+        response.set_cookie('total_visits', context['cookie_total_visits'], max_age=max_age)
+        response.set_cookie('last_visit', timezone.now().isoformat(), max_age=max_age)
+
+        # DB logging
+        if self.request.user.is_authenticated:
+            UserHistory.objects.create(
+                user=self.request.user,
+                action="Visited main page"
+            )
+
+        return response
 
 def signup(request):
     if request.method == 'POST':
@@ -95,29 +112,38 @@ def activity_create(request):
         form = ActivityForm()
     return render(request, 'main/activity_form.html', {'form': form})
 
-@login_required
-def activity_detail(request, pk):
-    activity = get_object_or_404(Activity, pk=pk)
+class ActivityDetailView(DetailView):
+    model = Activity
+    template_name = "main/activity_detail.html"
+    context_object_name = "activity"
 
-    activity_visits = request.session.get('activity_visits', {})
-    key = str(activity.pk)
-    activity_visits[key] = activity_visits.get(key, 0) + 1
-    request.session['activity_visits'] = activity_visits
+    def get(self, request, *args, **kwargs):
+        # load object first
+        self.object = self.get_object()
 
-    # DB history (optional, but you already wanted this)
-    if request.user.is_authenticated:
-        UserHistory.objects.create(
-            user=request.user,
-            action=f"Visited activity: {activity.title}"
-        )
+        # session count per activity
+        activity_visits = request.session.get('activity_visits', {})
+        key = str(self.object.pk)
+        activity_visits[key] = activity_visits.get(key, 0) + 1
+        request.session['activity_visits'] = activity_visits
 
-    media_items = activity.media.all().order_by('-created_at')
+        # history log
+        if request.user.is_authenticated:
+            UserHistory.objects.create(
+                user=request.user,
+                action=f"Visited activity: {self.object.title}"
+            )
 
-    return render(request, 'main/activity_detail.html', {
-        'activity': activity,
-        'media_items': media_items,
-        'session_activity_visits': activity_visits.get(key, 1),
-    })
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        activity = self.object
+
+        context['media_items'] = activity.media.all().order_by('-created_at')
+        context['session_activity_visits'] = self.request.session['activity_visits'].get(str(activity.pk), 1)
+
+        return context
 
 def search_suggest(request):
     q = request.GET.get('q', '')
