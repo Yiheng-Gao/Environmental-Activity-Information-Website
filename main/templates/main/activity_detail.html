@@ -219,30 +219,50 @@
         <!-- Registration Card -->
         <div class="card shadow-sm mb-4 border-success">
             <div class="card-body">
-{% if user.is_authenticated %}
-                    {% if is_registered %}
-                        <div class="alert alert-success mb-3">
-                            <i class="bi bi-check-circle me-2"></i>You are registered for this activity!
-                        </div>
-                        <form method="post" action="{% url 'activity_cancel' activity.pk %}">
-    {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-danger w-100">
-                                <i class="bi bi-x-circle me-1"></i>Cancel Registration
-                            </button>
-  </form>
-{% else %}
-                        <form method="post" action="{% url 'activity_register' activity.pk %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-success w-100 btn-lg">
-                                <i class="bi bi-person-plus me-2"></i>Register for This Activity
-                            </button>
-                        </form>
+                {% if user.is_authenticated %}
+                    {% if event_passed %}
+                        {# Past events #}
+                        {% if is_registered %}
+                            <div class="alert alert-success mb-0">
+                                <i class="bi bi-check-circle me-2"></i><strong>You attended this event!</strong>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-secondary mb-0">
+                                <i class="bi bi-info-circle me-2"></i>This event has already passed.
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        {# Upcoming events #}
+                        {% if is_registered %}
+                            <div class="alert alert-success mb-3">
+                                <i class="bi bi-check-circle me-2"></i>You are registered for this activity!
+                            </div>
+                            <form method="post" action="{% url 'activity_cancel' activity.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger w-100">
+                                    <i class="bi bi-x-circle me-1"></i>Cancel Registration
+                                </button>
+                            </form>
+                        {% else %}
+                            <form method="post" action="{% url 'activity_register' activity.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success w-100 btn-lg">
+                                    <i class="bi bi-person-plus me-2"></i>Register for This Activity
+                                </button>
+                            </form>
+                        {% endif %}
                     {% endif %}
                 {% else %}
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Please <a href="{% url 'login' %}" class="alert-link">log in</a> to register.
-                    </div>
+                    {% if not event_passed %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Please <a href="{% url 'login' %}" class="alert-link">log in</a> to register.
+                        </div>
+                    {% else %}
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle me-2"></i>This event has already passed.
+                        </div>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>

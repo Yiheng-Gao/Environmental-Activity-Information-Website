@@ -27,17 +27,14 @@ class ActivityListView(ListView):
         
         queryset = Activity.objects.all()
         
-        # Filter by date (upcoming vs past)
         if date_filter == 'past':
             queryset = queryset.filter(date__lt=now).order_by('-date')
-        else:  # default to 'upcoming'
+        else:
             queryset = queryset.filter(date__gte=now).order_by('date')
         
-        # Filter by official events (organizer events) - only for upcoming
         if official_filter == 'true':
-            queryset = queryset.filter(created_by__profile__is_organizer=True)
+            queryset = queryset.filter(created_by__profile__is_organizer=True, date__gte=now)
         
-        # Apply keyword search filter
         if q:
             queryset = queryset.filter(
                 Q(title__icontains=q) |
@@ -45,9 +42,12 @@ class ActivityListView(ListView):
                 Q(location__icontains=q)
             )
         
-        # Apply category dropdown filter
         if category_filter:
-            queryset = queryset.filter(category=category_filter)
+            valid_categories = [choice[0] for choice in Activity.CATEGORY_CHOICES]
+            if category_filter in valid_categories:
+                queryset = queryset.filter(category=category_filter)
+            else:
+                category_filter = ''
         
         return queryset
 
@@ -59,6 +59,12 @@ class ActivityListView(ListView):
         category_filter = request.GET.get('category', '')
         date_filter = request.GET.get('date_filter', 'upcoming')
         official_filter = request.GET.get('official', '')
+        
+        if category_filter:
+            from .models import Activity
+            valid_categories = [choice[0] for choice in Activity.CATEGORY_CHOICES]
+            if category_filter not in valid_categories:
+                category_filter = ''
         
         # user registrations
         registered_ids = set()
@@ -76,6 +82,7 @@ class ActivityListView(ListView):
 
         # Add current time for relative date calculations
         from django.utils import timezone
+        now = timezone.now()
         context.update({
             'query': q,
             'category_filter': category_filter,
@@ -83,7 +90,7 @@ class ActivityListView(ListView):
             'official_filter': official_filter,
             'category_choices': category_choices,
             'registered_ids': registered_ids,
-            'now': timezone.now(),
+            'now': now,
         })
 
         return context
@@ -262,6 +269,11 @@ def search_suggest(request):
 @login_required
 def register_activity(request, pk):
     activity = get_object_or_404(Activity, pk=pk)
+    now = timezone.now()
+
+    if activity.date < now:
+        messages.error(request, "You cannot register for events that have already passed.")
+        return redirect('activity_detail', pk=pk)
 
     if request.method == 'POST':
         reg, created = Registration.objects.get_or_create(
@@ -279,12 +291,17 @@ def register_activity(request, pk):
         )
 
         messages.success(request, f"You registered for: {activity.title}")
-    return redirect('activity_list')
+    return redirect('activity_detail', pk=pk)
 
 
 @login_required
 def cancel_registration(request, pk):
     activity = get_object_or_404(Activity, pk=pk)
+    now = timezone.now()
+
+    if activity.date < now:
+        messages.error(request, "You cannot cancel registration for events that have already passed.")
+        return redirect('activity_detail', pk=pk)
 
     if request.method == 'POST':
         try:
@@ -299,7 +316,7 @@ def cancel_registration(request, pk):
             messages.info(request, f"You cancelled: {activity.title}")
         except Registration.DoesNotExist:
             pass
-    return redirect('activity_list')
+    return redirect('activity_detail', pk=pk)
 
 
 @login_required
