@@ -35,7 +35,7 @@
   <h5>Upload a new image or video</h5>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ form.file }}
+    {{ media_form.file }}
     <button type="submit" class="btn btn-success mt-2">Upload</button>
   </form>
 {% else %}

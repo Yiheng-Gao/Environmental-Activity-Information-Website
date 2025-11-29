@@ -117,17 +117,20 @@ class ActivityDetailView(DetailView):
     template_name = "main/activity_detail.html"
     context_object_name = "activity"
 
+    def get_object(self):
+        """Always load the object so GET and POST work correctly."""
+        return super().get_object()
+
     def get(self, request, *args, **kwargs):
-        # load object first
         self.object = self.get_object()
 
-        # session count per activity
+        # session visits
         activity_visits = request.session.get('activity_visits', {})
         key = str(self.object.pk)
         activity_visits[key] = activity_visits.get(key, 0) + 1
         request.session['activity_visits'] = activity_visits
 
-        # history log
+        # DB history
         if request.user.is_authenticated:
             UserHistory.objects.create(
                 user=request.user,
@@ -136,14 +139,42 @@ class ActivityDetailView(DetailView):
 
         return super().get(request, *args, **kwargs)
 
+    def post(self, request, *args, **kwargs):
+        """Handle media uploads."""
+        self.object = self.get_object()
+
+        if not request.user.is_authenticated:
+            return redirect('login')
+
+        form = MediaForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            media = form.save(commit=False)
+            media.activity = self.object
+            media.created_by = request.user
+            media.save()
+
+            UserHistory.objects.create(
+                user=request.user,
+                action=f"Uploaded media to: {self.object.title}"
+            )
+
+            return redirect('activity_detail', pk=self.object.pk)
+
+        # DEBUG: Show errors so we know what’s wrong
+        print("MEDIA UPLOAD ERRORS:", form.errors)
+
+        return self.get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        activity = self.object
-
-        context['media_items'] = activity.media.all().order_by('-created_at')
-        context['session_activity_visits'] = self.request.session['activity_visits'].get(str(activity.pk), 1)
-
+        context['media_items'] = self.object.media.all().order_by('-created_at')
+        context['media_form'] = MediaForm()
+        context['session_activity_visits'] = self.request.session['activity_visits'].get(
+            str(self.object.pk), 1
+        )
         return context
+
 
 def search_suggest(request):
     q = request.GET.get('q', '')
