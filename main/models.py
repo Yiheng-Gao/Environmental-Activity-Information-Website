@@ -30,6 +30,7 @@ class Activity(models.Model):
     description = models.TextField()
     location = models.CharField(max_length=200)
     date = models.DateTimeField()
+    is_featured = models.BooleanField(default=False, help_text="Mark as featured to show on homepage (staff only)")
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activities_created')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

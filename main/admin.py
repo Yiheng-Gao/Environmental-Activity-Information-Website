@@ -52,9 +52,11 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'location', 'date', 'created_by', 'is_official')
-    list_filter = ('category', 'date', 'created_by__profile__is_organizer')
+    list_display = ('title', 'category', 'location', 'date', 'created_by', 'is_official', 'is_featured')
+    list_filter = ('category', 'date', 'is_featured', 'created_by__profile__is_organizer')
     search_fields = ('title', 'description', 'location', 'created_by__username')
+    list_editable = ('is_featured',)
+    fields = ('category', 'title', 'description', 'location', 'date', 'created_by', 'is_featured')
     
     def is_official(self, obj):
         if hasattr(obj.created_by, 'profile'):
@@ -62,6 +64,12 @@ class ActivityAdmin(admin.ModelAdmin):
         return False
     is_official.boolean = True
     is_official.short_description = 'Official'
+    
+    def get_readonly_fields(self, request, obj=None):
+        readonly = []
+        if not request.user.is_staff:
+            readonly.append('is_featured')
+        return readonly
 
 @admin.register(Media)
 class MediaAdmin(admin.ModelAdmin):

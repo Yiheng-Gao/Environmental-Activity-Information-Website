@@ -249,6 +249,30 @@ def cancel_registration(request, pk):
             pass
     return redirect('activity_list')
 
+
+@login_required
+def toggle_featured(request, pk):
+    """Toggle featured status of an activity (staff only)"""
+    if not request.user.is_staff:
+        messages.error(request, "You don't have permission to perform this action.")
+        return redirect('activity_detail', pk=pk)
+    
+    activity = get_object_or_404(Activity, pk=pk)
+    
+    if request.method == 'POST':
+        activity.is_featured = not activity.is_featured
+        activity.save()
+        
+        status = "featured" if activity.is_featured else "unfeatured"
+        messages.success(request, f"Activity '{activity.title}' has been {status}.")
+        
+        UserHistory.objects.create(
+            user=request.user,
+            action=f"Marked activity '{activity.title}' as {status}"
+        )
+    
+    return redirect('activity_detail', pk=pk)
+
 @login_required
 def user_history(request):
     history_items = UserHistory.objects.filter(
@@ -352,8 +376,17 @@ def home(request):
     category_counts = Activity.objects.values('category').annotate(count=Count('id'))
     categories_available = len(category_counts)
     
-    # Featured upcoming activities (next 4 upcoming)
-    featured_activities = Activity.objects.filter(date__gte=today).order_by('date')[:4]
+    # Featured upcoming activities (random 4 from featured upcoming activities)
+    featured_upcoming = Activity.objects.filter(date__gte=today, is_featured=True)
+    if featured_upcoming.exists():
+        import random
+        featured_list = list(featured_upcoming)
+        if len(featured_list) > 4:
+            featured_activities = random.sample(featured_list, 4)
+        else:
+            featured_activities = featured_list
+    else:
+        featured_activities = Activity.objects.filter(date__gte=today).order_by('date')[:4]
     
     # Get all categories for highlights
     all_categories = Activity.CATEGORY_CHOICES
