@@ -7,6 +7,8 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     user_photo = models.ImageField(upload_to='profiles/', blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    is_organizer = models.BooleanField(default=False)
+    organization_name = models.CharField(max_length=200, blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
