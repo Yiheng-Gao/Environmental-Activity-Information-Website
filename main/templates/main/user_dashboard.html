@@ -14,33 +14,106 @@
 <!-- Profile Card -->
 <div class="card shadow-sm mb-4">
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start">
-            <div>
-                <h3 class="card-title mb-2">
-                    <i class="bi bi-person-circle text-success me-2"></i>{{ user.username }}
-                </h3>
-                <p class="text-muted mb-1">
-                    <i class="bi bi-envelope me-2"></i>{{ user.email }}
-                </p>
-                {% if profile and profile.is_organizer %}
-                    <span class="badge bg-warning text-dark">
-                        <i class="bi bi-shield-check me-1"></i>Organizer
-                    </span>
-                    {% if profile.organization_name %}
-                        <span class="badge bg-info text-dark ms-2">
-                            <i class="bi bi-building me-1"></i>{{ profile.organization_name }}
-                        </span>
-                    {% endif %}
+        <div class="row">
+            <div class="col-md-3 text-center mb-3 mb-md-0">
+                {% if profile and profile.user_photo %}
+                    <img src="{{ profile.user_photo.url }}" alt="{{ user.username }}" 
+                         class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #28a745;">
+                {% else %}
+                    <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 150px; height: 150px; border: 3px solid #28a745;">
+                        <i class="bi bi-person-circle text-white" style="font-size: 100px;"></i>
+                    </div>
                 {% endif %}
+                <form method="post" enctype="multipart/form-data" id="profile-photo-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="upload_photo" value="1">
+                    <div class="mb-2">
+                        <input type="file" name="user_photo" id="profile-photo-input" 
+                               class="form-control form-control-sm" accept="image/*" style="display: none;">
+                        <label for="profile-photo-input" class="btn btn-success btn-sm w-100 mb-1" style="cursor: pointer;">
+                            <i class="bi bi-camera me-1"></i>Upload Photo
+                        </label>
+                        {% if profile and profile.user_photo %}
+                            <button type="button" class="btn btn-outline-danger btn-sm w-100" id="remove-photo-btn">
+                                <i class="bi bi-trash me-1"></i>Remove Photo
+                            </button>
+                        {% endif %}
+                    </div>
+                </form>
             </div>
-            <div>
-                <a href="{% url 'user_history' %}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-clock-history me-1"></i>View History
-                </a>
+            <div class="col-md-9">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h3 class="card-title mb-2">
+                            <i class="bi bi-person-circle text-success me-2"></i>{{ user.username }}
+                        </h3>
+                        <p class="text-muted mb-1">
+                            <i class="bi bi-envelope me-2"></i>{{ user.email }}
+                        </p>
+                        {% if profile and profile.is_organizer %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-shield-check me-1"></i>Organizer
+                            </span>
+                            {% if profile.organization_name %}
+                                <span class="badge bg-info text-dark ms-2">
+                                    <i class="bi bi-building me-1"></i>{{ profile.organization_name }}
+                                </span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <a href="{% url 'user_history' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-clock-history me-1"></i>View History
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const photoInput = document.getElementById('profile-photo-input');
+    const photoForm = document.getElementById('profile-photo-form');
+    const removeBtn = document.getElementById('remove-photo-btn');
+    
+    if (photoInput) {
+        photoInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                photoForm.submit();
+            }
+        });
+    }
+    
+    if (removeBtn) {
+        removeBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to remove your profile picture?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{% url "user_dashboard" %}';
+                form.enctype = 'multipart/form-data';
+                
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = 'csrfmiddlewaretoken';
+                csrf.value = '{{ csrf_token }}';
+                form.appendChild(csrf);
+                
+                const removeInput = document.createElement('input');
+                removeInput.type = 'hidden';
+                removeInput.name = 'remove_photo';
+                removeInput.value = '1';
+                form.appendChild(removeInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+});
+</script>
 
 <!-- Statistics Cards -->
 <div class="row g-4 mb-4">

@@ -112,3 +112,19 @@ class RatingForm(forms.ModelForm):
     class Meta:
         model = Rating
         fields = ['rating', 'comment']
+
+
+class ProfilePictureForm(forms.ModelForm):
+    user_photo = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/*',
+            'id': 'profile-photo-input'
+        }),
+        label="Profile Picture"
+    )
+    
+    class Meta:
+        model = Profile
+        fields = ['user_photo']

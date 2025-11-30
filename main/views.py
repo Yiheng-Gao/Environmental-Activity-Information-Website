@@ -9,7 +9,7 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from .forms import CustomSignupForm, ContactMessageForm, RatingForm
+from .forms import CustomSignupForm, ContactMessageForm, RatingForm, ProfilePictureForm
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.views import LoginView as DjangoLoginView
 
@@ -399,12 +399,28 @@ def user_dashboard(request):
     user = request.user
     now = timezone.now()
     
-    # Get user profile
-    profile = None
-    try:
-        profile = user.profile
-    except:
-        pass
+    # Get or create user profile
+    profile, created = Profile.objects.get_or_create(user=user)
+    
+    # Handle profile picture upload/removal
+    if request.method == 'POST':
+        if 'upload_photo' in request.POST:
+            form = ProfilePictureForm(request.POST, request.FILES, instance=profile)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Profile picture updated successfully!")
+                return redirect('user_dashboard')
+            else:
+                messages.error(request, "Error uploading profile picture. Please try again.")
+        elif 'remove_photo' in request.POST:
+            if profile.user_photo:
+                profile.user_photo.delete()
+                profile.user_photo = None
+                profile.save()
+                messages.success(request, "Profile picture removed successfully!")
+                return redirect('user_dashboard')
+    else:
+        form = ProfilePictureForm(instance=profile)
     
     # Statistics
     activities_created = Activity.objects.filter(created_by=user).count()
@@ -455,6 +471,7 @@ def user_dashboard(request):
     from datetime import datetime
     response = render(request, 'main/user_dashboard.html', {
         'profile': profile,
+        'profile_form': form,
         'activities_created': activities_created,
         'activities_registered': activities_registered,
         'total_registrations': total_registrations,
