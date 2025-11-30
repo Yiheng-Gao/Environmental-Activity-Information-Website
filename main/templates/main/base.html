@@ -41,12 +41,6 @@
 </form>
 
     <div class="ms-auto d-flex align-items-center">
-        <a href="{% url 'contact_us' %}" class="btn btn-light btn-sm me-3">
-        Contact Us
-      </a>
-    <a href="{% url 'about_us' %}" class="btn btn-light btn-sm me-3">
-        About Us
-      </a>
       {% if user.is_authenticated %}
          <a href="{% url 'user_history' %}" class="text-white me-2 text-decoration-none">
             Hi, {{ user.username }}

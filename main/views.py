@@ -1,15 +1,16 @@
 # main/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate
 from .models import Activity, Media, Registration, UserHistory
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .forms import CustomSignupForm, ContactMessageForm
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.contrib.auth.views import LoginView as DjangoLoginView
 
 class ActivityListView(ListView):
     model = Activity
@@ -19,8 +20,17 @@ class ActivityListView(ListView):
     def get_queryset(self):
         q = self.request.GET.get('q', '')
         category_filter = self.request.GET.get('category', '')
+        date_filter = self.request.GET.get('date_filter', 'upcoming')
+        
+        now = timezone.now()
         
         queryset = Activity.objects.all()
+        
+        # Filter by date (upcoming vs past)
+        if date_filter == 'past':
+            queryset = queryset.filter(date__lt=now).order_by('-date')
+        else:  # default to 'upcoming'
+            queryset = queryset.filter(date__gte=now).order_by('date')
         
         # Apply keyword search filter
         if q:
@@ -34,7 +44,7 @@ class ActivityListView(ListView):
         if category_filter:
             queryset = queryset.filter(category=category_filter)
         
-        return queryset.order_by('-created_at')
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -42,20 +52,8 @@ class ActivityListView(ListView):
 
         q = request.GET.get('q', '')
         category_filter = request.GET.get('category', '')
-
-        # session
-        session_visit_count = request.session.get('main_page_visits', 0) + 1
-        request.session['main_page_visits'] = session_visit_count
-
-        # cookies
-        raw_total = request.COOKIES.get('total_visits', '0')
-        try:
-            total_visits = int(raw_total) + 1
-        except ValueError:
-            total_visits = 1
-
-        last_visit = request.COOKIES.get('last_visit')
-
+        date_filter = request.GET.get('date_filter', 'upcoming')
+        
         # user registrations
         registered_ids = set()
         if request.user.is_authenticated:
@@ -70,32 +68,26 @@ class ActivityListView(ListView):
         from .models import Activity
         category_choices = Activity.CATEGORY_CHOICES
 
-        # Add to context
+        # Add current time for relative date calculations
+        from django.utils import timezone
         context.update({
             'query': q,
             'category_filter': category_filter,
+            'date_filter': date_filter,
             'category_choices': category_choices,
             'registered_ids': registered_ids,
-            'session_visit_count': session_visit_count,
-            'cookie_total_visits': total_visits,
-            'cookie_last_visit': last_visit,
+            'now': timezone.now(),
         })
 
         return context
 
     def render_to_response(self, context, **response_kwargs):
-        """Attach cookies to the response."""
         response = super().render_to_response(context, **response_kwargs)
 
-        max_age = 30 * 24 * 60 * 60
-        response.set_cookie('total_visits', context['cookie_total_visits'], max_age=max_age)
-        response.set_cookie('last_visit', timezone.now().isoformat(), max_age=max_age)
-
-        # DB logging
         if self.request.user.is_authenticated:
             UserHistory.objects.create(
                 user=self.request.user,
-                action="Visited main page"
+                action="Visited activities page"
             )
 
         return response
@@ -303,6 +295,37 @@ def contact_us(request):
 
 def about_us(request):
     return render(request, 'main/about_us.html')
+
+class CustomLoginView(DjangoLoginView):
+    template_name = 'registration/login.html'
+    
+    def get(self, request, *args, **kwargs):
+        failed_attempts = request.session.get('failed_login_attempts', 0)
+        context = self.get_context_data()
+        context['failed_attempts'] = failed_attempts
+        return self.render_to_response(context)
+    
+    def form_valid(self, form):
+        if 'failed_login_attempts' in self.request.session:
+            del self.request.session['failed_login_attempts']
+        
+        response = super().form_valid(form)
+        
+        if self.request.user.is_authenticated:
+            UserHistory.objects.create(
+                user=self.request.user,
+                action="Logged in"
+            )
+        
+        return response
+    
+    def form_invalid(self, form):
+        failed_attempts = self.request.session.get('failed_login_attempts', 0) + 1
+        self.request.session['failed_login_attempts'] = failed_attempts
+        
+        context = self.get_context_data(form=form)
+        context['failed_attempts'] = failed_attempts
+        return self.render_to_response(context)
 
 def home(request):
     """Homepage view with hero section and statistics"""

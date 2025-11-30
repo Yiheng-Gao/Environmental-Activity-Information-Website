@@ -1,50 +1,103 @@
 {% extends 'main/base.html' %}
 {% block title %}Activities · Eco Activities{% endblock %}
 {% block content %}
-<h1 class="mb-3">
-    {% if query or category_filter %}
-        {% if query and category_filter %}
-            Search results for "{{ query }}" in {{ category_filter }}
-        {% elif query %}
-            Search results for "{{ query }}"
-        {% elif category_filter %}
-            Activities in {{ category_filter }}
-        {% endif %}
-    {% else %}
-        Upcoming Activities
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Activities</h1>
+    {% if user.is_authenticated %}
+        <a href="{% url 'activity_create' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle me-1"></i>Create Activity
+        </a>
     {% endif %}
-</h1>
+</div>
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link {% if date_filter == 'upcoming' or not date_filter %}active{% endif %}" 
+           href="{% url 'activity_list' %}?date_filter=upcoming{% if query %}&q={{ query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">
+            <i class="bi bi-calendar-event me-1"></i>Upcoming
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if date_filter == 'past' %}active{% endif %}" 
+           href="{% url 'activity_list' %}?date_filter=past{% if query %}&q={{ query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">
+            <i class="bi bi-calendar-check me-1"></i>Past Activities
+        </a>
+    </li>
+</ul>
+
 {% if query or category_filter %}
-    <p class="text-muted">
-        <a href="{% url 'activity_list' %}" class="text-decoration-none">Clear filters</a>
-    </p>
+    <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+        <div>
+            {% if query and category_filter %}
+                <i class="bi bi-search me-1"></i>Search: "{{ query }}" in {{ category_filter }}
+            {% elif query %}
+                <i class="bi bi-search me-1"></i>Search: "{{ query }}"
+            {% elif category_filter %}
+                <i class="bi bi-tag me-1"></i>Category: {{ category_filter }}
+            {% endif %}
+        </div>
+        <a href="{% url 'activity_list' %}?date_filter={{ date_filter }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-x-circle me-1"></i>Clear filters
+        </a>
+    </div>
 {% endif %}
 
-    <p class="text-muted">
-    This session visits to main page: {{ session_visit_count }}<br>
-    Total visits (from cookie): {{ cookie_total_visits }}<br>
-    Last visit (from cookie): {{ cookie_last_visit|default:"First time here" }}
-</p>
 
-<div class="row g-3">
+<div class="row g-4">
   {% for a in activities %}
-    <div class="col-md-6">
-      <div class="card h-100">
+    <div class="col-md-6 col-lg-4">
+      <div class="card h-100 border-success">
+        {% if a.media.first and a.media.first.is_image %}
+          <img src="{{ a.media.first.file.url }}" class="card-img-top" alt="{{ a.title }}" style="height: 200px; object-fit: cover;">
+        {% else %}
+          <div class="card-img-top bg-success d-flex align-items-center justify-content-center" style="height: 200px;">
+            <i class="bi bi-tree text-white" style="font-size: 4rem;"></i>
+          </div>
+        {% endif %}
         <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="badge bg-success">{{ a.category }}</span>
+            {% if date_filter == 'past' %}
+              <span class="badge bg-secondary">Past</span>
+            {% else %}
+              <span class="badge bg-primary">Upcoming</span>
+            {% endif %}
+          </div>
           <h5 class="card-title">
-              <a href="{% url 'activity_detail' a.pk %}" class="text-success text-decoration-none">
-                {{ a.title }}
-              </a>
+            <a href="{% url 'activity_detail' a.pk %}" class="text-success text-decoration-none">
+              {{ a.title }}
+            </a>
           </h5>
-
-          <p class="card-text">{{ a.description|truncatechars:140 }}</p>
-          <p class="mb-1"><strong>Category:</strong> {{ a.category }}</p>
-          <p class="mb-1"><strong>Location:</strong> {{ a.location }}</p>
-          <p class="mb-1"><strong>Hosted by:</strong> {{ a.created_by }} </p>
-          <p class="mb-0"><strong>Date:</strong> {{ a.date }}</p>
-
-            {% if user.is_authenticated %}
-              <div class="mt-2">
+          <p class="card-text text-muted small">{{ a.description|truncatechars:100 }}</p>
+          <p class="card-text mb-1"><small class="text-muted"><i class="bi bi-geo-alt"></i> {{ a.location }}</small></p>
+          <p class="card-text mb-1"><small class="text-muted"><i class="bi bi-person"></i> {{ a.created_by }}</small></p>
+          <p class="card-text mb-3">
+            <small class="text-muted">
+              <i class="bi bi-calendar"></i> {{ a.date|date:"M d, Y" }}
+              {% if date_filter == 'upcoming' %}
+                {% with time_diff=a.date|timesince:now %}
+                  {% if time_diff and "0 minutes" not in time_diff %}
+                    <span class="text-success">• {{ time_diff }} from now</span>
+                  {% endif %}
+                {% endwith %}
+              {% else %}
+                {% with time_diff=a.date|timesince:now %}
+                  {% if time_diff and "0 minutes" not in time_diff %}
+                    <span class="text-muted">• {{ time_diff }} ago</span>
+                  {% endif %}
+                {% endwith %}
+              {% endif %}
+            </small>
+          </p>
+          
+          {% if user.is_authenticated %}
+            <div class="mt-auto">
+              {% if date_filter == 'past' %}
+                {% if a.id in registered_ids %}
+                  <span class="badge bg-success">You attended</span>
+                {% endif %}
+              {% else %}
                 {% if a.id in registered_ids %}
                   <span class="badge bg-success me-2">Registered</span>
                   <form method="post" action="{% url 'activity_cancel' a.pk %}" style="display:inline;">
@@ -56,38 +109,42 @@
                 {% else %}
                   <form method="post" action="{% url 'activity_register' a.pk %}" style="display:inline;">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-primary">
+                    <button type="submit" class="btn btn-sm btn-success">
                       Register
                     </button>
                   </form>
                 {% endif %}
-              </div>
-            {% else %}
-              <p class="mt-2">
-                <a href="{% url 'login' %}">Login</a> to register for this activity.
+              {% endif %}
+            </div>
+          {% else %}
+            {% if date_filter == 'upcoming' %}
+              <p class="text-muted small mb-0">
+                <a href="{% url 'login' %}" class="text-success text-decoration-none">Login</a> to register
               </p>
             {% endif %}
-
-
+          {% endif %}
         </div>
       </div>
     </div>
   {% empty %}
-    <p>No activities yet. Add some in <a href="/admin/">admin</a>.</p>
+    <div class="col-12">
+      <div class="text-center py-5">
+        <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
+        <p class="text-muted">
+          {% if date_filter == 'past' %}
+            No past activities found.
+          {% else %}
+            No upcoming activities found.
+          {% endif %}
+          {% if user.is_authenticated %}
+            <a href="{% url 'activity_create' %}" class="text-success text-decoration-none">Create one</a> or check back later!
+          {% else %}
+            <a href="{% url 'login' %}" class="text-success text-decoration-none">Login</a> to create an activity.
+          {% endif %}
+        </p>
+      </div>
+    </div>
   {% endfor %}
-
-</div>
-
-  <div class="mt-4 text-center">
-  {% if user.is_authenticated %}
-    <a href="{% url 'activity_create' %}" class="btn btn-success btn-lg">
-      + Create New Activity
-    </a>
-  {% else %}
-    <p>
-      <a href="{% url 'login' %}">Login</a> to create a new activity.
-    </p>
-  {% endif %}
 </div>
 
 {% endblock %}

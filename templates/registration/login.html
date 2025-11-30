@@ -14,18 +14,52 @@
 
                 <form method="post">
                     {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger mb-3">
+                            {% for error in form.non_field_errors %}
+                                <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                     <div class="mb-3">
                         <label for="{{ form.username.id_for_label }}" class="form-label">
                             <i class="bi bi-person me-1"></i>{{ form.username.label }}
                         </label>
                         {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.username.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                     <div class="mb-3">
                         <label for="{{ form.password.id_for_label }}" class="form-label">
                             <i class="bi bi-lock me-1"></i>{{ form.password.label }}
                         </label>
                         {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.password.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
+                    {% if failed_attempts %}
+                        {% if failed_attempts >= 3 %}
+                            <div class="alert alert-danger mb-3">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                <strong>Multiple failed login attempts detected.</strong><br>
+                                Please <a href="{% url 'password_reset' %}" class="alert-link">reset your password</a> to secure your account.
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning small mb-3">
+                                <i class="bi bi-exclamation-triangle me-1"></i>{{ failed_attempts }} failed login attempt{{ failed_attempts|pluralize }} this session.
+                            </div>
+                        {% endif %}
+                    {% endif %}
                     <div class="d-grid mb-3">
                         <button type="submit" class="btn btn-success btn-lg">
                             <i class="bi bi-box-arrow-in-right me-2"></i>Login
