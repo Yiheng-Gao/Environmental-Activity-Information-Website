@@ -1,6 +1,6 @@
 from django import forms
 from .models import Activity
-from .models import Media, ContactMessage
+from .models import Media, ContactMessage, Profile
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
@@ -18,6 +18,13 @@ class MediaForm(forms.ModelForm):
 
 class CustomSignupForm(UserCreationForm):
     email = forms.EmailField(required=True, help_text="Required.")
+    is_organizer = forms.BooleanField(required=False, label="I am an organizer")
+    organization_name = forms.CharField(
+        max_length=200, 
+        required=False, 
+        label="Organization Name",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
 
     class Meta:
         model = User
@@ -29,11 +36,25 @@ class CustomSignupForm(UserCreationForm):
             'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        is_organizer = cleaned_data.get('is_organizer')
+        organization_name = cleaned_data.get('organization_name')
+        
+        if is_organizer and not organization_name:
+            raise forms.ValidationError("Organization name is required when registering as an organizer.")
+        
+        return cleaned_data
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
         if commit:
             user.save()
+            profile, created = Profile.objects.get_or_create(user=user)
+            profile.is_organizer = self.cleaned_data.get('is_organizer', False)
+            profile.organization_name = self.cleaned_data.get('organization_name', '')
+            profile.save()
         return user
 
 

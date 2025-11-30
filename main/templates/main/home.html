@@ -85,7 +85,14 @@
                         </div>
                     {% endif %}
                     <div class="card-body">
-                        <span class="badge bg-success mb-2">{{ activity.category }}</span>
+                        <div class="mb-2">
+                            <span class="badge bg-success">{{ activity.category }}</span>
+                            {% if activity.created_by.profile.is_organizer %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-shield-check me-1"></i>Official
+                                </span>
+                            {% endif %}
+                        </div>
                         <h5 class="card-title">
                             <a href="{% url 'activity_detail' activity.pk %}" class="text-success text-decoration-none">
                                 {{ activity.title }}

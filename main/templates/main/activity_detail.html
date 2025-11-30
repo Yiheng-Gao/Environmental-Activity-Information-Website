@@ -6,9 +6,22 @@
 </p>
 
 <h2>{{ activity.title }}</h2>
-<p><strong>Category:</strong> {{ activity.category }}</p>
+<div class="mb-3">
+    <span class="badge bg-success me-2">{{ activity.category }}</span>
+    {% if activity.created_by.profile.is_organizer %}
+        <span class="badge bg-warning text-dark">
+            <i class="bi bi-shield-check me-1"></i>Official Event
+        </span>
+    {% endif %}
+</div>
+{% if activity.created_by.profile.is_organizer and activity.created_by.profile.organization_name %}
+    <p class="text-muted">
+        <i class="bi bi-building me-1"></i><strong>Organized by:</strong> {{ activity.created_by.profile.organization_name }}
+    </p>
+{% endif %}
 <p><strong>Location:</strong> {{ activity.location }}</p>
 <p><strong>Date:</strong> {{ activity.date }}</p>
+<p><strong>Hosted by:</strong> {{ activity.created_by.username }}</p>
 <p>{{ activity.description }}</p>
 
 <hr>

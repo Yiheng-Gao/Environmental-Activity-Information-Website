@@ -21,6 +21,7 @@ class ActivityListView(ListView):
         q = self.request.GET.get('q', '')
         category_filter = self.request.GET.get('category', '')
         date_filter = self.request.GET.get('date_filter', 'upcoming')
+        official_filter = self.request.GET.get('official', '')
         
         now = timezone.now()
         
@@ -31,6 +32,10 @@ class ActivityListView(ListView):
             queryset = queryset.filter(date__lt=now).order_by('-date')
         else:  # default to 'upcoming'
             queryset = queryset.filter(date__gte=now).order_by('date')
+        
+        # Filter by official events (organizer events) - only for upcoming
+        if official_filter == 'true':
+            queryset = queryset.filter(created_by__profile__is_organizer=True)
         
         # Apply keyword search filter
         if q:
@@ -53,6 +58,7 @@ class ActivityListView(ListView):
         q = request.GET.get('q', '')
         category_filter = request.GET.get('category', '')
         date_filter = request.GET.get('date_filter', 'upcoming')
+        official_filter = request.GET.get('official', '')
         
         # user registrations
         registered_ids = set()
@@ -74,6 +80,7 @@ class ActivityListView(ListView):
             'query': q,
             'category_filter': category_filter,
             'date_filter': date_filter,
+            'official_filter': official_filter,
             'category_choices': category_choices,
             'registered_ids': registered_ids,
             'now': timezone.now(),

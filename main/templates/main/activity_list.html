@@ -13,7 +13,7 @@
 
 <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
-        <a class="nav-link {% if date_filter == 'upcoming' or not date_filter %}active{% endif %}" 
+        <a class="nav-link {% if date_filter == 'upcoming' or not date_filter and not official_filter %}active{% endif %}" 
            href="{% url 'activity_list' %}?date_filter=upcoming{% if query %}&q={{ query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">
             <i class="bi bi-calendar-event me-1"></i>Upcoming
         </a>
@@ -22,6 +22,12 @@
         <a class="nav-link {% if date_filter == 'past' %}active{% endif %}" 
            href="{% url 'activity_list' %}?date_filter=past{% if query %}&q={{ query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">
             <i class="bi bi-calendar-check me-1"></i>Past Activities
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if official_filter == 'true' %}active{% endif %}" 
+           href="{% url 'activity_list' %}?date_filter=upcoming&official=true{% if query %}&q={{ query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">
+            <i class="bi bi-shield-check me-1"></i>Official Events
         </a>
     </li>
 </ul>
@@ -37,7 +43,7 @@
                 <i class="bi bi-tag me-1"></i>Category: {{ category_filter }}
             {% endif %}
         </div>
-        <a href="{% url 'activity_list' %}?date_filter={{ date_filter }}" class="btn btn-sm btn-outline-secondary">
+        <a href="{% url 'activity_list' %}?date_filter={{ date_filter }}{% if official_filter == 'true' %}&official=true{% endif %}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-x-circle me-1"></i>Clear filters
         </a>
     </div>
@@ -57,7 +63,14 @@
         {% endif %}
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start mb-2">
-            <span class="badge bg-success">{{ a.category }}</span>
+            <div>
+              <span class="badge bg-success">{{ a.category }}</span>
+              {% if a.created_by.profile.is_organizer %}
+                <span class="badge bg-warning text-dark">
+                  <i class="bi bi-shield-check me-1"></i>Official
+                </span>
+              {% endif %}
+            </div>
             {% if date_filter == 'past' %}
               <span class="badge bg-secondary">Past</span>
             {% else %}
