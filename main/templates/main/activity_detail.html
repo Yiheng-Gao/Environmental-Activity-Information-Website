@@ -479,13 +479,13 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 {% endif %}
 
-<!-- Ratings and Comments Section -->
+<!-- Comments Section -->
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <h5 class="card-title mb-4">
-            <i class="bi bi-star-fill text-warning me-2"></i>Ratings & Reviews
-            {% if total_ratings > 0 %}
-                <span class="badge bg-success ms-2">{{ total_ratings }} review{{ total_ratings|pluralize }}</span>
+            <i class="bi bi-chat-dots text-success me-2"></i>Comments
+            {% if total_ratings > 0 and event_passed %}
+                <span class="badge bg-success ms-2">{{ total_ratings }} rating{{ total_ratings|pluralize }}</span>
                 <span class="badge bg-info ms-2">
                     <i class="bi bi-star-fill me-1"></i>{{ average_rating|floatformat:1 }}/5.0
                 </span>
@@ -496,55 +496,57 @@ document.addEventListener('DOMContentLoaded', function() {
             {% if not user_rating %}
                 <div class="card border-primary mb-4">
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-3">Rate this event</h6>
+                        <h6 class="card-subtitle mb-3">Add a comment</h6>
                         <form method="post" action="{% url 'submit_rating' activity.pk %}">
                             {% csrf_token %}
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Rating <span class="text-danger">*</span></label>
-                                <div class="d-flex gap-3">
-                                    {% for choice in rating_form.rating.field.choices %}
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="rating" id="rating_{{ choice.0 }}" value="{{ choice.0 }}" required>
-                                            <label class="form-check-label" for="rating_{{ choice.0 }}">
-                                                {% for i in "12345" %}
-                                                    {% if forloop.counter <= choice.0 %}
-                                                        <i class="bi bi-star-fill text-warning"></i>
-                                                    {% else %}
-                                                        <i class="bi bi-star text-secondary"></i>
-                                                    {% endif %}
-                                                {% endfor %}
-                                                ({{ choice.0 }})
-                                            </label>
-                                        </div>
-                                    {% endfor %}
+                            {% if event_passed %}
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Rating <span class="text-danger">*</span></label>
+                                    <div class="d-flex gap-3">
+                                        {% for choice in rating_form.rating.field.choices %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="rating" id="rating_{{ choice.0 }}" value="{{ choice.0 }}" required>
+                                                <label class="form-check-label" for="rating_{{ choice.0 }}">
+                                                    {% for i in "12345" %}
+                                                        {% if forloop.counter <= choice.0 %}
+                                                            <i class="bi bi-star-fill text-warning"></i>
+                                                        {% else %}
+                                                            <i class="bi bi-star text-secondary"></i>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                    ({{ choice.0 }})
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
                                 </div>
-                            </div>
+                            {% endif %}
                             <div class="mb-3">
-                                <label for="id_comment" class="form-label">Comment (Optional)</label>
-                                <textarea name="comment" id="id_comment" class="form-control" rows="4" placeholder="Share your thoughts about this event..."></textarea>
+                                <label for="id_comment" class="form-label">Comment <span class="text-danger">*</span></label>
+                                <textarea name="comment" id="id_comment" class="form-control" rows="4" placeholder="Share your thoughts about this event" required></textarea>
                             </div>
                             <button type="submit" class="btn btn-success">
-                                <i class="bi bi-check-circle me-1"></i>Submit Rating
+                                <i class="bi bi-check-circle me-1"></i>Submit Comment
                             </button>
                         </form>
                     </div>
                 </div>
             {% else %}
                 <div class="alert alert-info mb-4">
-                    <i class="bi bi-info-circle me-2"></i>You have already rated this event. 
-                    <a href="#rating_{{ user_rating.id }}" class="alert-link">View your rating below</a>
+                    <i class="bi bi-info-circle me-2"></i>You have already commented on this event. 
+                    <a href="#rating_{{ user_rating.id }}" class="alert-link">View your comment below</a>
                 </div>
             {% endif %}
         {% else %}
             <div class="alert alert-warning mb-4">
                 <i class="bi bi-exclamation-triangle me-2"></i>
-                Please <a href="{% url 'login' %}" class="alert-link">log in</a> to rate and review this event.
+                Please <a href="{% url 'login' %}" class="alert-link">log in</a> to comment on this event.
             </div>
         {% endif %}
         
         {% if ratings %}
             <div class="mt-4">
-                <h6 class="mb-3">All Reviews</h6>
+                <h6 class="mb-3">All Comments</h6>
                 {% for rating in ratings %}
                     <div class="card mb-3" id="rating_{{ rating.id }}">
                         <div class="card-body">
@@ -556,30 +558,28 @@ document.addEventListener('DOMContentLoaded', function() {
                                         </a>
                                     </h6>
                                     <div class="mb-2">
-                                        {% for i in "12345" %}
-                                            {% if forloop.counter <= rating.rating %}
-                                                <i class="bi bi-star-fill text-warning"></i>
-                                            {% else %}
-                                                <i class="bi bi-star text-secondary"></i>
-                                            {% endif %}
-                                        {% endfor %}
+                                        {% if rating.rating %}
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= rating.rating %}
+                                                    <i class="bi bi-star-fill text-warning"></i>
+                                                {% else %}
+                                                    <i class="bi bi-star text-secondary"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
                                         <span class="ms-2 text-muted small">{{ rating.created_at|date:"F d, Y" }}</span>
                                     </div>
                                 </div>
                             </div>
-                            {% if rating.comment %}
-                                <p class="card-text mb-0">{{ rating.comment }}</p>
-                            {% else %}
-                                <p class="card-text text-muted mb-0"><em>No comment provided</em></p>
-                            {% endif %}
+                            <p class="card-text mb-0">{{ rating.comment }}</p>
                         </div>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
             <div class="text-center py-4 text-muted">
-                <i class="bi bi-star display-4 d-block mb-2"></i>
-                <p>No ratings yet. Be the first to rate this event!</p>
+                <i class="bi bi-chat-dots display-4 d-block mb-2"></i>
+                <p>No comments yet. Be the first to comment on this event!</p>
             </div>
         {% endif %}
     </div>

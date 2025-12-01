@@ -107,8 +107,8 @@ class Rating(models.Model):
     
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='ratings')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings')
-    rating = models.IntegerField(choices=RATING_CHOICES)
-    comment = models.TextField(blank=True, null=True)
+    rating = models.IntegerField(choices=RATING_CHOICES, blank=True, null=True)
+    comment = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -117,4 +117,7 @@ class Rating(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"{self.user.username} - {self.rating} stars for {self.activity.title}"
+        if self.rating:
+            return f"{self.user.username} - {self.rating} stars for {self.activity.title}"
+        else:
+            return f"{self.user.username} - comment for {self.activity.title}"

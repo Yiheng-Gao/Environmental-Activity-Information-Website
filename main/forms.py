@@ -96,15 +96,15 @@ class RatingForm(forms.ModelForm):
     rating = forms.ChoiceField(
         choices=Rating.RATING_CHOICES,
         widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
-        required=True,
+        required=False,
         label="Rating"
     )
     comment = forms.CharField(
-        required=False,
+        required=True,
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 4,
-            'placeholder': 'Share your thoughts about this event (optional)...'
+            'placeholder': 'Share your thoughts about this event'
         }),
         label="Comment"
     )

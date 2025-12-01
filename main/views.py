@@ -261,11 +261,11 @@ class ActivityDetailView(DetailView):
         else:
             context['user_rating'] = None
         
-        # Calculate average rating
-        ratings_list = self.object.ratings.all()
-        if ratings_list:
-            context['average_rating'] = sum(r.rating for r in ratings_list) / len(ratings_list)
-            context['total_ratings'] = len(ratings_list)
+        # Calculate average rating (only from ratings that have a rating value)
+        ratings_with_rating = [r for r in self.object.ratings.all() if r.rating is not None]
+        if ratings_with_rating:
+            context['average_rating'] = sum(r.rating for r in ratings_with_rating) / len(ratings_with_rating)
+            context['total_ratings'] = len(ratings_with_rating)
         else:
             context['average_rating'] = 0
             context['total_ratings'] = 0
@@ -560,34 +560,54 @@ def about_us(request):
 @login_required
 def submit_rating(request, pk):
     activity = get_object_or_404(Activity, pk=pk)
+    now = timezone.now()
+    event_passed = activity.date < now
     
     if request.method == 'POST':
         form = RatingForm(request.POST)
         if form.is_valid():
+            rating_value = form.cleaned_data.get('rating')
+            comment_value = form.cleaned_data.get('comment', '').strip()
+            
+            if not comment_value:
+                messages.error(request, "Comment cannot be blank.")
+                return redirect('activity_detail', pk=pk)
+            
+            if event_passed and not rating_value:
+                messages.error(request, "Rating is required for past events.")
+                return redirect('activity_detail', pk=pk)
+            
+            if not event_passed and rating_value:
+                messages.error(request, "Ratings can only be added for past events.")
+                return redirect('activity_detail', pk=pk)
+            
             rating, created = Rating.objects.get_or_create(
                 activity=activity,
                 user=request.user,
                 defaults={
-                    'rating': form.cleaned_data['rating'],
-                    'comment': form.cleaned_data.get('comment', '')
+                    'rating': rating_value if event_passed else None,
+                    'comment': comment_value
                 }
             )
             if not created:
-                rating.rating = form.cleaned_data['rating']
-                rating.comment = form.cleaned_data.get('comment', '')
+                rating.rating = rating_value if event_passed else None
+                rating.comment = comment_value
                 rating.save()
-                messages.success(request, "Your rating has been updated!")
+                messages.success(request, "Your comment has been updated!")
             else:
-                messages.success(request, "Thank you for rating this event!")
+                if event_passed:
+                    messages.success(request, "Thank you for rating and commenting on this event!")
+                else:
+                    messages.success(request, "Thank you for your comment!")
             
             UserHistory.objects.create(
                 user=request.user,
-                action=f"Rated activity: {activity.title}"
+                action=f"Commented on activity: {activity.title}"
             )
             
             return redirect('activity_detail', pk=pk)
         else:
-            messages.error(request, "Please select a rating.")
+            messages.error(request, "Please fill in all required fields.")
             return redirect('activity_detail', pk=pk)
     
     return redirect('activity_detail', pk=pk)
