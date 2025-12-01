@@ -48,19 +48,26 @@ Follow these steps to run the project from scratch.
 ```sh
 git clone https://github.com/Yiheng-Gao/Environmental-Activity-Information-Website.git
 cd Environmental-Activity-Information-Website
-
+```
 ### 2 Install Dependencies
+```sh
 pip install -r requirements.txt
-
+```
 ## Database Setup
 ### 3 Apply Database Migrations
+```sh
 python manage.py migrate
+```
 ### 4 Load Initial Data (Fixture)
 fixtures/initial_data.json
+```sh
 python manage.py loaddata fixtures/initial_data.json
+```
 
 ##Run the Development Server
+```sh
 python manage.py runserver
+```
 Then visit:
 http://127.0.0.1:8000/
 
