@@ -162,7 +162,7 @@
                         <i class="bi bi-cloud-upload text-success me-2"></i>Upload Media
                     </h5>
                     <div class="alert alert-info mb-3">
-                        <i class="bi bi-info-circle me-2"></i>You can upload media since the event has passed and you were registered.
+                        <i class="bi bi-info-circle me-2"></i>Please share any photos or videos you took during the event so others can see what happened!
                     </div>
                     <form method="post" enctype="multipart/form-data" id="media-upload-form">
                         {% csrf_token %}
@@ -199,9 +199,9 @@
                     <div class="alert alert-warning mt-3">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         {% if not event_passed %}
-                            Media uploads are only available after the event has passed.
+                            You can upload media if you registered and the event has passed.
                         {% elif not is_registered %}
-                            You must be registered for this activity to upload media after the event.
+                            You can upload media if you registered and the event has passed.
                         {% endif %}
                     </div>
                 {% elif not user.is_authenticated %}
@@ -219,7 +219,7 @@
         <!-- Registration Card -->
         <div class="card shadow-sm mb-4 border-success">
             <div class="card-body">
-                {% if user.is_authenticated %}
+{% if user.is_authenticated %}
                     {% if event_passed %}
                         {# Past events #}
                         {% if is_registered %}
@@ -238,12 +238,12 @@
                                 <i class="bi bi-check-circle me-2"></i>You are registered for this activity!
                             </div>
                             <form method="post" action="{% url 'activity_cancel' activity.pk %}">
-                                {% csrf_token %}
+    {% csrf_token %}
                                 <button type="submit" class="btn btn-outline-danger w-100">
                                     <i class="bi bi-x-circle me-1"></i>Cancel Registration
                                 </button>
-                            </form>
-                        {% else %}
+  </form>
+{% else %}
                             <form method="post" action="{% url 'activity_register' activity.pk %}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-success w-100 btn-lg">
@@ -478,5 +478,109 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 {% endif %}
+
+<!-- Ratings and Comments Section -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-4">
+            <i class="bi bi-star-fill text-warning me-2"></i>Ratings & Reviews
+            {% if total_ratings > 0 %}
+                <span class="badge bg-success ms-2">{{ total_ratings }} review{{ total_ratings|pluralize }}</span>
+                <span class="badge bg-info ms-2">
+                    <i class="bi bi-star-fill me-1"></i>{{ average_rating|floatformat:1 }}/5.0
+                </span>
+            {% endif %}
+        </h5>
+        
+        {% if user.is_authenticated %}
+            {% if not user_rating %}
+                <div class="card border-primary mb-4">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3">Rate this event</h6>
+                        <form method="post" action="{% url 'submit_rating' activity.pk %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Rating <span class="text-danger">*</span></label>
+                                <div class="d-flex gap-3">
+                                    {% for choice in rating_form.rating.field.choices %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="rating" id="rating_{{ choice.0 }}" value="{{ choice.0 }}" required>
+                                            <label class="form-check-label" for="rating_{{ choice.0 }}">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= choice.0 %}
+                                                        <i class="bi bi-star-fill text-warning"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-star text-secondary"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                                ({{ choice.0 }})
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_comment" class="form-label">Comment (Optional)</label>
+                                <textarea name="comment" id="id_comment" class="form-control" rows="4" placeholder="Share your thoughts about this event..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-1"></i>Submit Rating
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle me-2"></i>You have already rated this event. 
+                    <a href="#rating_{{ user_rating.id }}" class="alert-link">View your rating below</a>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-warning mb-4">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Please <a href="{% url 'login' %}" class="alert-link">log in</a> to rate and review this event.
+            </div>
+        {% endif %}
+        
+        {% if ratings %}
+            <div class="mt-4">
+                <h6 class="mb-3">All Reviews</h6>
+                {% for rating in ratings %}
+                    <div class="card mb-3" id="rating_{{ rating.id }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="card-title mb-1">
+                                        <i class="bi bi-person-circle me-1"></i>{{ rating.user.username }}
+                                    </h6>
+                                    <div class="mb-2">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= rating.rating %}
+                                                <i class="bi bi-star-fill text-warning"></i>
+                                            {% else %}
+                                                <i class="bi bi-star text-secondary"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <span class="ms-2 text-muted small">{{ rating.created_at|date:"F d, Y" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if rating.comment %}
+                                <p class="card-text mb-0">{{ rating.comment }}</p>
+                            {% else %}
+                                <p class="card-text text-muted mb-0"><em>No comment provided</em></p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-star display-4 d-block mb-2"></i>
+                <p>No ratings yet. Be the first to rate this event!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
 
 {% endblock %}

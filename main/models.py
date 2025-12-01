@@ -94,3 +94,27 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"Message from {self.name} - {self.subject}"
+
+
+class Rating(models.Model):
+    RATING_CHOICES = [
+        (1, '1 Star'),
+        (2, '2 Stars'),
+        (3, '3 Stars'),
+        (4, '4 Stars'),
+        (5, '5 Stars'),
+    ]
+    
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='ratings')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings')
+    rating = models.IntegerField(choices=RATING_CHOICES)
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('activity', 'user')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.rating} stars for {self.activity.title}"

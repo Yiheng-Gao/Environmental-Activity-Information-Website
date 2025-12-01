@@ -2,13 +2,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login, authenticate
-from .models import Activity, Media, Registration, UserHistory
+from .models import Activity, Media, Registration, UserHistory, Rating
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponseRedirect
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from .forms import CustomSignupForm, ContactMessageForm
+from .forms import CustomSignupForm, ContactMessageForm, RatingForm
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.views import LoginView as DjangoLoginView
 
@@ -197,9 +197,9 @@ class ActivityDetailView(DetailView):
         
         if not can_upload:
             if not event_passed:
-                messages.error(request, "You can only upload media after the event has passed.")
+                messages.error(request, "You can upload media if you registered and the event has passed.")
             elif not is_registered:
-                messages.error(request, "You must be registered for this activity to upload media after the event.")
+                messages.error(request, "You can upload media if you registered and the event has passed.")
             return redirect('activity_detail', pk=self.object.pk)
 
         form = MediaForm(request.POST, request.FILES)
@@ -247,6 +247,28 @@ class ActivityDetailView(DetailView):
         now = timezone.now()
         context['event_passed'] = self.object.date < now
         context['can_upload_media'] = context['event_passed'] and context['is_registered'] and self.request.user.is_authenticated
+        
+        # Get ratings and comments
+        context['ratings'] = self.object.ratings.all().order_by('-created_at')
+        context['rating_form'] = RatingForm()
+        
+        # Check if user has already rated
+        if self.request.user.is_authenticated:
+            context['user_rating'] = Rating.objects.filter(
+                activity=self.object,
+                user=self.request.user
+            ).first()
+        else:
+            context['user_rating'] = None
+        
+        # Calculate average rating
+        ratings_list = self.object.ratings.all()
+        if ratings_list:
+            context['average_rating'] = sum(r.rating for r in ratings_list) / len(ratings_list)
+            context['total_ratings'] = len(ratings_list)
+        else:
+            context['average_rating'] = 0
+            context['total_ratings'] = 0
         
         return context
 
@@ -533,6 +555,42 @@ def contact_us(request):
 
 def about_us(request):
     return render(request, 'main/about_us.html')
+
+
+@login_required
+def submit_rating(request, pk):
+    activity = get_object_or_404(Activity, pk=pk)
+    
+    if request.method == 'POST':
+        form = RatingForm(request.POST)
+        if form.is_valid():
+            rating, created = Rating.objects.get_or_create(
+                activity=activity,
+                user=request.user,
+                defaults={
+                    'rating': form.cleaned_data['rating'],
+                    'comment': form.cleaned_data.get('comment', '')
+                }
+            )
+            if not created:
+                rating.rating = form.cleaned_data['rating']
+                rating.comment = form.cleaned_data.get('comment', '')
+                rating.save()
+                messages.success(request, "Your rating has been updated!")
+            else:
+                messages.success(request, "Thank you for rating this event!")
+            
+            UserHistory.objects.create(
+                user=request.user,
+                action=f"Rated activity: {activity.title}"
+            )
+            
+            return redirect('activity_detail', pk=pk)
+        else:
+            messages.error(request, "Please select a rating.")
+            return redirect('activity_detail', pk=pk)
+    
+    return redirect('activity_detail', pk=pk)
 
 class CustomLoginView(DjangoLoginView):
     template_name = 'registration/login.html'

@@ -1,6 +1,6 @@
 from django import forms
 from .models import Activity
-from .models import Media, ContactMessage, Profile
+from .models import Media, ContactMessage, Profile, Rating
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
@@ -90,3 +90,25 @@ class ContactMessageForm(forms.ModelForm):
             'subject': forms.TextInput(attrs={'class': 'form-control'}),
             'message': forms.Textarea(attrs={'rows': 5, 'class': 'form-control'}),
         }
+
+
+class RatingForm(forms.ModelForm):
+    rating = forms.ChoiceField(
+        choices=Rating.RATING_CHOICES,
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        required=True,
+        label="Rating"
+    )
+    comment = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 4,
+            'placeholder': 'Share your thoughts about this event (optional)...'
+        }),
+        label="Comment"
+    )
+    
+    class Meta:
+        model = Rating
+        fields = ['rating', 'comment']
