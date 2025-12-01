@@ -19,6 +19,7 @@ urlpatterns = [
     path('contact/', views.contact_us, name='contact_us'),
     path('about/', views.about_us, name='about_us'),
     path('activity/<int:pk>/rate/', views.submit_rating, name='submit_rating'),
+    path('profile/<str:username>/', views.user_profile, name='user_profile'),
 
 
 ]

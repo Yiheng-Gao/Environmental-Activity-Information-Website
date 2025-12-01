@@ -592,6 +592,36 @@ def submit_rating(request, pk):
     
     return redirect('activity_detail', pk=pk)
 
+
+@login_required
+def user_profile(request, username):
+    profile_user = get_object_or_404(User, username=username)
+    
+    try:
+        profile = profile_user.profile
+    except:
+        profile = None
+    
+    activities_created = Activity.objects.filter(created_by=profile_user).count()
+    activities_registered = Registration.objects.filter(
+        user=profile_user,
+        status='joined'
+    ).count()
+    
+    recent_activities = Activity.objects.filter(created_by=profile_user).order_by('-created_at')[:5]
+    recent_ratings = Rating.objects.filter(user=profile_user).order_by('-created_at')[:5]
+    
+    context = {
+        'profile_user': profile_user,
+        'profile': profile,
+        'activities_created': activities_created,
+        'activities_registered': activities_registered,
+        'recent_activities': recent_activities,
+        'recent_ratings': recent_ratings,
+    }
+    
+    return render(request, 'main/user_profile.html', context)
+
 class CustomLoginView(DjangoLoginView):
     template_name = 'registration/login.html'
     
