@@ -632,6 +632,32 @@ def submit_rating(request, pk):
 
 
 @login_required
+def delete_comment(request, pk, rating_id):
+    activity = get_object_or_404(Activity, pk=pk)
+    rating = get_object_or_404(Rating, pk=rating_id, activity=activity)
+    
+    # Check permissions: user can delete their own comment, admin can delete any
+    can_delete = request.user == rating.user or request.user.is_staff or request.user.is_superuser
+    
+    if not can_delete:
+        messages.error(request, "You don't have permission to delete this comment.")
+        return redirect('activity_detail', pk=pk)
+    
+    if request.method == 'POST':
+        rating.delete()
+        messages.success(request, "Comment deleted successfully.")
+        
+        UserHistory.objects.create(
+            user=request.user,
+            action=f"Deleted comment on activity: {activity.title}"
+        )
+        
+        return redirect('activity_detail', pk=pk)
+    
+    return redirect('activity_detail', pk=pk)
+
+
+@login_required
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
     

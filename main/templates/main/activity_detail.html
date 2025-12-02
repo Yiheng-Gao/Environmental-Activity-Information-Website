@@ -551,7 +551,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="card mb-3" id="rating_{{ rating.id }}">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
+                                <div class="flex-grow-1">
                                     <h6 class="card-title mb-1">
                                         <a href="{% url 'user_profile' rating.user.username %}" class="text-decoration-none">
                                             <i class="bi bi-person-circle me-1"></i>{{ rating.user.username }}
@@ -570,6 +570,18 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <span class="ms-2 text-muted small">{{ rating.created_at|date:"F d, Y" }}</span>
                                     </div>
                                 </div>
+                                {% if user.is_authenticated %}
+                                    {% if user == rating.user or user.is_staff or user.is_superuser %}
+                                        <div>
+                                            <form method="post" action="{% url 'delete_comment' activity.pk rating.id %}" style="display:inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash me-1"></i>Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
                             </div>
                             <p class="card-text mb-0">{{ rating.comment }}</p>
                         </div>
@@ -584,5 +596,6 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endif %}
     </div>
 </div>
+
 
 {% endblock %}

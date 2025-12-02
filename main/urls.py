@@ -19,6 +19,7 @@ urlpatterns = [
     path('contact/', views.contact_us, name='contact_us'),
     path('about/', views.about_us, name='about_us'),
     path('activity/<int:pk>/rate/', views.submit_rating, name='submit_rating'),
+    path('activity/<int:pk>/comment/<int:rating_id>/delete/', views.delete_comment, name='delete_comment'),
     path('profile/<str:username>/', views.user_profile, name='user_profile'),
 
 
