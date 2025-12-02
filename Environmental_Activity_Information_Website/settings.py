@@ -135,4 +135,4 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 TEMPLATES[0]['DIRS'] = [BASE_DIR / 'templates']
 
 LOGIN_REDIRECT_URL = 'activity_list'
-LOGOUT_REDIRECT_URL = 'activity_list'
+LOGOUT_REDIRECT_URL = 'home'
