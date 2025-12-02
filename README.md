@@ -12,9 +12,11 @@ The system is built using **Django 5**, **SQLite**, and supports media uploads s
 - Activity list display  
 - Activity detail page  
 - Activity signup  
-- User signup history  
+- User activity history  
 - Admin panel for managing activities  
-- Media file support (images uploaded by administrators)
+- Media file support
+- User Dashboard
+- Comment Section
 
 ---
 
