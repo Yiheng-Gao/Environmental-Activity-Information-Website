@@ -1,7 +1,7 @@
 # Environmental Activity Information Website
 
 This project is a web platform designed to display and manage environmental activity information.  
-It provides user registration/login, activity browsing, activity signup, and an admin backend for activity management.  
+It provides user registration/login, activity browsing, activity signup, user dashboard and an admin backend for activity management.  
 The system is built using **Django 5**, **SQLite**, and supports media uploads such as activity images.
 
 ---
