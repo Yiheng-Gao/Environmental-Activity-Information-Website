@@ -2,7 +2,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login, authenticate
-from .models import Activity, Media, Registration, UserHistory, Rating
+from django.contrib.auth.models import User
+from .models import Activity, Media, Registration, UserHistory, Rating, Profile
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponseRedirect
 from django.db.models import Q
@@ -619,7 +620,9 @@ def user_profile(request, username):
     
     try:
         profile = profile_user.profile
-    except:
+    except Profile.DoesNotExist:
+        profile = None
+    except AttributeError:
         profile = None
     
     activities_created = Activity.objects.filter(created_by=profile_user).count()
